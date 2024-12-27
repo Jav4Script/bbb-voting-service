@@ -1,0 +1,9 @@
+# Config file for air
+[build]
+bin = "main"
+cmd = "go build -o ./main ./cmd/main.go"
+include_ext = ["go", "tpl", "tmpl", "html"]
+exclude_dir = ["assets", "tmp", "vendor", "scripts"]
+exclude_file = ["README.md"]
+follow_symlink = true
+full_bin = "APP_ENV=development ./main"

@@ -1,0 +1,32 @@
+# dotenv environment variables file
+.env
+
+# MacOS files
+.DS_Store
+
+# IDE files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+# Binaries for programs and plugins
+*.exe
+*.dll
+*.so
+*.dylib
+*.exe~
+
+# Test binary, build with `go test -c`
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# Go workspace file
+go.work
+
+# tmp
+/tmp

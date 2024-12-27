@@ -1,0 +1,285 @@
+basePath: /
+definitions:
+  dtos.CreateParticipantDTO:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  dtos.ValidateCaptchaDTO:
+    properties:
+      captcha_id:
+        type: string
+      captcha_solution:
+        type: string
+    required:
+    - captcha_id
+    - captcha_solution
+    type: object
+  models.VoteModel:
+    properties:
+      device:
+        type: string
+      id:
+        type: string
+      ipaddress:
+        type: string
+      isCaptchaCompleted:
+        type: boolean
+      participantID:
+        type: string
+      region:
+        type: string
+      timestamp:
+        type: string
+      userAgent:
+        type: string
+      voterID:
+        type: string
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: This is the API for the BBB Voting System
+  title: BBB Voting System API
+  version: "1.0"
+paths:
+  /captcha/{captcha_id}:
+    get:
+      consumes:
+      - application/json
+      description: Serves the CAPTCHA image
+      parameters:
+      - description: CAPTCHA ID
+        in: path
+        name: captcha_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: captcha_id and captcha_image
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: CAPTCHA not found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Serve CAPTCHA
+      tags:
+      - captcha
+  /generate-captcha:
+    get:
+      consumes:
+      - application/json
+      description: Generates a new CAPTCHA
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: captcha_id and captcha_image
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate CAPTCHA
+      tags:
+      - captcha
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the service's status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /participants:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all participants
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              additionalProperties: true
+              type: object
+            type: array
+      summary: Get Participants
+      tags:
+      - participants
+    post:
+      consumes:
+      - application/json
+      description: Creates a participant
+      parameters:
+      - description: Participant
+        in: body
+        name: participant
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.CreateParticipantDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Create Participant
+      tags:
+      - participants
+  /participants/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes a participant
+      parameters:
+      - description: Participant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      summary: Delete Participant
+      tags:
+      - participants
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a participant
+      parameters:
+      - description: Participant ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Participant
+      tags:
+      - participants
+  /results/final:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves final voting results
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get Final Results
+      tags:
+      - results
+  /results/partial:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves partial voting results
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: integer
+            type: object
+      summary: Get Partial Results
+      tags:
+      - results
+  /validate-captcha:
+    post:
+      consumes:
+      - application/json
+      description: Validates the CAPTCHA solution
+      parameters:
+      - description: CAPTCHA ID and solution
+        in: body
+        name: captcha
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ValidateCaptchaDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: CAPTCHA validated successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Invalid CAPTCHA
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Validate CAPTCHA
+      tags:
+      - captcha
+  /votes:
+    post:
+      consumes:
+      - application/json
+      description: Casts a vote for a participant
+      parameters:
+      - description: Vote details
+        in: body
+        name: vote
+        required: true
+        schema:
+          $ref: '#/definitions/models.VoteModel'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Cast Vote
+      tags:
+      - vote
+schemes:
+- http
+- https
+swagger: "2.0"
