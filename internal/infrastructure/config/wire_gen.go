@@ -8,12 +8,15 @@ package config
 
 import (
 	"bbb-voting-service/internal/application/usecases"
+	queue2 "bbb-voting-service/internal/domain/producer"
+	repositories3 "bbb-voting-service/internal/domain/repositories"
 	"bbb-voting-service/internal/infrastructure/consumer"
 	"bbb-voting-service/internal/infrastructure/controllers"
 	"bbb-voting-service/internal/infrastructure/producer"
 	"bbb-voting-service/internal/infrastructure/repositories/postgres"
 	repositories2 "bbb-voting-service/internal/infrastructure/repositories/redis"
 	"bbb-voting-service/internal/infrastructure/services"
+	"os"
 )
 
 import (
@@ -26,32 +29,32 @@ func InitializeContainer() (*Container, error) {
 	db := InitDB()
 	client := InitRedis()
 	channel := InitRabbitMQ()
-	postgresVoteRepository := repositories.NewPostgresVoteRepository(db)
 	participantRepository := repositories.NewParticipantRepository(db)
+	postgresVoteRepository := repositories.NewPostgresVoteRepository(db)
 	redisRepository := repositories2.NewRedisRepository(client)
 	rabbitMQProducer := queue.NewRabbitMQProducer(channel)
-	processVoteUsecase := usecase.NewProcessVoteUsecase(postgresVoteRepository, participantRepository)
-	castVoteUsecase := usecase.NewCastVoteUsecase(redisRepository, rabbitMQProducer, participantRepository)
+	processVoteUsecase := usecase.NewProcessVoteUsecase(postgresVoteRepository, participantRepository, redisRepository)
+	castVoteUsecase := InitCastVoteUsecase(redisRepository, rabbitMQProducer, participantRepository)
 	createParticipantUsecase := usecase.NewCreateParticipantUsecase(participantRepository)
 	getParticipantsUsecase := usecase.NewGetParticipantsUsecase(participantRepository)
 	deleteParticipantUsecase := usecase.NewDeleteParticipantUsecase(participantRepository)
 	getParticipantUsecase := usecase.NewGetParticipantUsecase(participantRepository)
 	getPartialResultsUsecase := usecase.NewGetPartialResultsUsecase(redisRepository)
-	getFinalResultsUsecase := usecase.NewGetFinalResultsUseCase(postgresVoteRepository)
-	captchaService := services.NewCaptchaService()
+	getFinalResultsUsecase := usecase.NewGetFinalResultsUseCase(postgresVoteRepository, participantRepository)
+	captchaService := services.NewCaptchaService(client)
 	captchaController := controllers.NewCaptchaController(captchaService)
 	participantController := controllers.NewParticipantController(getParticipantsUsecase, getParticipantUsecase, createParticipantUsecase, deleteParticipantUsecase)
-	voteController := controllers.NewVoteController(castVoteUsecase)
+	voteController := controllers.NewVoteController(castVoteUsecase, captchaService)
 	resultController := controllers.NewResultController(getPartialResultsUsecase, getFinalResultsUsecase)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
 	container := &Container{
 		DB:                       db,
 		RedisClient:              client,
 		RabbitMQChannel:          channel,
-		VoteRepository:           postgresVoteRepository,
 		ParticipantRepository:    participantRepository,
+		VoteRepository:           postgresVoteRepository,
 		RedisRepository:          redisRepository,
-		RabbitMQRepository:       rabbitMQProducer,
+		RabbitMQProducer:         rabbitMQProducer,
 		ProcessVoteUsecase:       processVoteUsecase,
 		CastVoteUsecase:          castVoteUsecase,
 		CreateParticipantUsecase: createParticipantUsecase,
@@ -68,4 +71,16 @@ func InitializeContainer() (*Container, error) {
 		RabbitMQConsumer:         rabbitMQConsumer,
 	}
 	return container, nil
+}
+
+// wire.go:
+
+func InitCastVoteUsecase(
+	inMemoryRepository repositories3.InMemoryRepository,
+	messageProducer queue2.MessageProducer,
+	participantRepository repositories3.ParticipantRepository,
+) *usecase.CastVoteUsecase {
+	voteQueue := os.Getenv("VOTE_QUEUE")
+
+	return usecase.NewCastVoteUsecase(inMemoryRepository, messageProducer, participantRepository, voteQueue)
 }

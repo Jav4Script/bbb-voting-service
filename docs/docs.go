@@ -273,6 +273,15 @@ const docTemplate = `{
                                 "type": "integer"
                             }
                         }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -352,13 +361,38 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.VoteModel"
+                            "$ref": "#/definitions/dtos.CastVoteDTO"
                         }
+                    },
+                    {
+                        "type": "string",
+                        "description": "CAPTCHA validation token",
+                        "name": "X-Captcha-Token",
+                        "in": "header",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Invalid CAPTCHA token",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -371,12 +405,51 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "dtos.CastVoteDTO": {
+            "type": "object",
+            "required": [
+                "device",
+                "ip_address",
+                "participant_id",
+                "region",
+                "user_agent",
+                "voter_id"
+            ],
+            "properties": {
+                "device": {
+                    "type": "string"
+                },
+                "ip_address": {
+                    "type": "string"
+                },
+                "participant_id": {
+                    "type": "string"
+                },
+                "region": {
+                    "type": "string"
+                },
+                "user_agent": {
+                    "type": "string"
+                },
+                "voter_id": {
+                    "type": "string"
+                }
+            }
+        },
         "dtos.CreateParticipantDTO": {
             "type": "object",
             "required": [
+                "age",
+                "gender",
                 "name"
             ],
             "properties": {
+                "age": {
+                    "type": "integer"
+                },
+                "gender": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 }
@@ -393,38 +466,6 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "captcha_solution": {
-                    "type": "string"
-                }
-            }
-        },
-        "models.VoteModel": {
-            "type": "object",
-            "properties": {
-                "device": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "ipaddress": {
-                    "type": "string"
-                },
-                "isCaptchaCompleted": {
-                    "type": "boolean"
-                },
-                "participantID": {
-                    "type": "string"
-                },
-                "region": {
-                    "type": "string"
-                },
-                "timestamp": {
-                    "type": "string"
-                },
-                "userAgent": {
-                    "type": "string"
-                },
-                "voterID": {
                     "type": "string"
                 }
             }

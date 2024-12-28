@@ -6,7 +6,7 @@ import (
 	controllers "bbb-voting-service/internal/infrastructure/controllers"
 	producer "bbb-voting-service/internal/infrastructure/producer"
 	postgres "bbb-voting-service/internal/infrastructure/repositories/postgres"
-	redis_repository "bbb-voting-service/internal/infrastructure/repositories/redis"
+	redisRepository "bbb-voting-service/internal/infrastructure/repositories/redis"
 	services "bbb-voting-service/internal/infrastructure/services"
 
 	"github.com/go-redis/redis/v8"
@@ -18,10 +18,10 @@ type Container struct {
 	DB                       *gorm.DB
 	RedisClient              *redis.Client
 	RabbitMQChannel          *amqp.Channel
-	VoteRepository           *postgres.PostgresVoteRepository
 	ParticipantRepository    *postgres.ParticipantRepository
-	RedisRepository          *redis_repository.RedisRepository
-	RabbitMQRepository       *producer.RabbitMQProducer
+	VoteRepository           *postgres.PostgresVoteRepository
+	RedisRepository          *redisRepository.RedisRepository
+	RabbitMQProducer         *producer.RabbitMQProducer
 	ProcessVoteUsecase       *usecases.ProcessVoteUsecase
 	CastVoteUsecase          *usecases.CastVoteUsecase
 	CreateParticipantUsecase *usecases.CreateParticipantUsecase

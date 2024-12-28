@@ -1,10 +1,38 @@
 basePath: /
 definitions:
+  dtos.CastVoteDTO:
+    properties:
+      device:
+        type: string
+      ip_address:
+        type: string
+      participant_id:
+        type: string
+      region:
+        type: string
+      user_agent:
+        type: string
+      voter_id:
+        type: string
+    required:
+    - device
+    - ip_address
+    - participant_id
+    - region
+    - user_agent
+    - voter_id
+    type: object
   dtos.CreateParticipantDTO:
     properties:
+      age:
+        type: integer
+      gender:
+        type: string
       name:
         type: string
     required:
+    - age
+    - gender
     - name
     type: object
   dtos.ValidateCaptchaDTO:
@@ -16,27 +44,6 @@ definitions:
     required:
     - captcha_id
     - captcha_solution
-    type: object
-  models.VoteModel:
-    properties:
-      device:
-        type: string
-      id:
-        type: string
-      ipaddress:
-        type: string
-      isCaptchaCompleted:
-        type: boolean
-      participantID:
-        type: string
-      region:
-        type: string
-      timestamp:
-        type: string
-      userAgent:
-        type: string
-      voterID:
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -216,6 +223,12 @@ paths:
             additionalProperties:
               type: integer
             type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: Get Partial Results
       tags:
       - results
@@ -266,12 +279,29 @@ paths:
         name: vote
         required: true
         schema:
-          $ref: '#/definitions/models.VoteModel'
+          $ref: '#/definitions/dtos.CastVoteDTO'
+      - description: CAPTCHA validation token
+        in: header
+        name: X-Captcha-Token
+        required: true
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Invalid CAPTCHA token
           schema:
             additionalProperties:
               type: string

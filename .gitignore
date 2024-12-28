@@ -35,4 +35,4 @@ go.work
 *.log
 
 # Docs
-docs/
+/docs/
