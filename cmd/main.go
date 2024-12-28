@@ -13,7 +13,7 @@ import (
 
 // @title BBB Voting System API
 // @version 1.0
-// @description This is the API for the BBB Voting System
+// @description This is the API for the BBB Voting System.
 // @host localhost:8080
 // @BasePath /
 // @schemes http https
@@ -28,6 +28,9 @@ import (
 func main() {
 	// Load environment variables
 	config.LoadEnv()
+
+	// Check required environment variables
+	config.CheckEnvVariables()
 
 	// Get the port from the environment variable
 	port := getPort()
@@ -57,10 +60,8 @@ func main() {
 // Function to retrieve the port from the environment, with a default value if not set
 func getPort() string {
 	port := os.Getenv("PORT")
-
 	if port == "" {
-		port = "8080" // Default port if not set
+		port = "8080"
 	}
-
 	return port
 }
