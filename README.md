@@ -3,7 +3,7 @@
 <div align="center" style="margin-bottom: 50px;">
   <img src="docs/assets/bbb.png" alt="Flow Icon" width="150" height="auto"/>
 
-  <h1>BBB Voting System 🎉</h1>
+  <h1>BBB Voting System </h1>
 
    <h4>
     <a href="https://github.com/Jav4Script/pulls">Request Feature</a>
@@ -19,24 +19,24 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Índice 📑
+## Índice
 
-- [Índice 📑](#índice-)
-- [Pré-requisitos 🛠️](#pré-requisitos-️)
-- [Setup do Projeto 🚀](#setup-do-projeto-)
-- [Comandos Úteis 🧰](#comandos-úteis-)
-- [Arquitetura 🏗️](#arquitetura-️)
+- [Índice](#índice)
+- [Pré-requisitos](#pré-requisitos)
+- [Setup do Projeto](#setup-do-projeto)
+- [Comandos Úteis](#comandos-úteis)
+- [Arquitetura](#arquitetura)
   - [Estrutura de Pastas](#estrutura-de-pastas)
-- [Fluxo de Dados 📊](#fluxo-de-dados-)
-- [Dependências e Justificativas 📦](#dependências-e-justificativas-)
-- [Variáveis de Ambiente 🌍](#variáveis-de-ambiente-)
-- [Referências e Cheatsheets 📚](#referências-e-cheatsheets-)
+- [Fluxo de Dados](#fluxo-de-dados)
+- [Dependências e Justificativas](#dependências-e-justificativas)
+- [Variáveis de Ambiente](#variáveis-de-ambiente)
+- [Referências e Cheatsheets](#referências-e-cheatsheets)
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Pré-requisitos 🛠️
+## Pré-requisitos 
 - [Docker](https://docs.docker.com/get-docker/)
 - [Docker Compose](https://docs.docker.com/compose/)
 - [Make](https://www.gnu.org/software/make/)
@@ -45,7 +45,7 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Setup do Projeto 🚀
+## Setup do Projeto 
 1. Clone este repositório:
     ```bash
     git clone https://github.com/Jav4Script/bbb-voting-system.git
@@ -77,7 +77,7 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Comandos Úteis 🧰
+## Comandos Úteis 
 
 | Comando            | Descrição                          |
 |--------------------|------------------------------------|
@@ -95,7 +95,7 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Arquitetura 🏗️
+## Arquitetura 
 
 Este sistema foi projetado com os seguintes componentes:
 
@@ -176,7 +176,7 @@ Este sistema foi projetado com os seguintes componentes:
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Fluxo de Dados 📊
+## Fluxo de Dados 
 
 A API recebe os votos, adiciona no redis para consulta rápida de resultados e os envia para o RabbitMQ (buffering).
 Consumidores processam os votos e também atualizam o Redis para manutenção da consistência.
@@ -187,7 +187,7 @@ Periodicamente, os dados do redis são sincronizados com os dados do PostgreSQL.
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Dependências e Justificativas 📦
+## Dependências e Justificativas 
 
 - Gin: Framework web para APIs REST em Go.
 - Redis: Armazenamento em memória para resultados parciais.
@@ -200,7 +200,7 @@ Periodicamente, os dados do redis são sincronizados com os dados do PostgreSQL.
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Variáveis de Ambiente 🌍
+## Variáveis de Ambiente 
 
 Aqui estão as variáveis de ambiente necessárias para configurar o projeto. Substitua os placeholders pelos valores apropriados:
 
@@ -225,7 +225,7 @@ REDIS_URL=your_redis_url           # URL do Redis
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Referências e Cheatsheets 📚
+## Referências e Cheatsheets 
 
 - [Docker Compose Cheatsheet](https://devhints.io/docker-compose)
 - [Gin Framework Documentation](https://gin-gonic.com/docs/)
