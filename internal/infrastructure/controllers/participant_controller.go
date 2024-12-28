@@ -1,11 +1,12 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	usecase "bbb-voting-service/internal/application/usecases"
 	dtos "bbb-voting-service/internal/domain/dtos"
-	entities "bbb-voting-service/internal/domain/entities"
+	mappers "bbb-voting-service/internal/infrastructure/mappers"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,19 +38,12 @@ func NewParticipantController(participantsUsecase *usecase.GetParticipantsUsecas
 func (controller *ParticipantController) GetParticipants(context *gin.Context) {
 	participants, err := controller.GetParticipantsUsecase.Execute()
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error retrieving participants: %v", err)
+		context.Error(err)
 		return
 	}
 
-	participantMaps := make([]map[string]interface{}, len(participants))
-	for i, participant := range participants {
-		participantMaps[i] = map[string]interface{}{
-			"id":    participant.ID,
-			"name":  participant.Name,
-			"votes": participant.Votes,
-		}
-	}
-
+	participantMaps := mappers.ToParticipantMaps(participants)
 	context.JSON(http.StatusOK, participantMaps)
 }
 
@@ -66,16 +60,12 @@ func (controller *ParticipantController) GetParticipant(context *gin.Context) {
 	id := context.Param("id")
 	participant, err := controller.GetParticipantUsecase.Execute(id)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error retrieving participant: %v", err)
+		context.Error(err)
 		return
 	}
 
-	participantMap := map[string]interface{}{
-		"id":    participant.ID,
-		"name":  participant.Name,
-		"votes": participant.Votes,
-	}
-
+	participantMap := mappers.ToParticipantMap(participant)
 	context.JSON(http.StatusOK, participantMap)
 }
 
@@ -89,29 +79,23 @@ func (controller *ParticipantController) GetParticipant(context *gin.Context) {
 // @Success 201 {object} map[string]interface{}
 // @Router /participants [post]
 func (controller *ParticipantController) CreateParticipant(context *gin.Context) {
-	var participantDTO dtos.CreateParticipantDTO
-	if err := context.ShouldBindJSON(&participantDTO); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	var dto dtos.CreateParticipantDTO
+	if err := context.ShouldBindJSON(&dto); err != nil {
+		log.Printf("Error binding JSON: %v", err)
+		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
 		return
 	}
 
-	participant := entities.Participant{
-		Name: participantDTO.Name,
-	}
+	participantEntity := mappers.FromCreateParticipantDTO(dto)
 
-	createdParticipant, err := controller.CreateParticipantUsecase.Execute(participant)
+	participant, err := controller.CreateParticipantUsecase.Execute(participantEntity)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error creating participant: %v", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create participant"})
 		return
 	}
 
-	participantMap := map[string]interface{}{
-		"id":    createdParticipant.ID,
-		"name":  createdParticipant.Name,
-		"votes": createdParticipant.Votes,
-	}
-
-	context.JSON(http.StatusCreated, participantMap)
+	context.JSON(http.StatusCreated, participant)
 }
 
 // DeleteParticipant godoc
@@ -127,7 +111,8 @@ func (controller *ParticipantController) DeleteParticipant(context *gin.Context)
 	id := context.Param("id")
 	err := controller.DeleteParticipantUsecase.Execute(id)
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error deleting participant: %v", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete participant"})
 		return
 	}
 

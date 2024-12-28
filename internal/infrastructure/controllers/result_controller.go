@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	usecase "bbb-voting-service/internal/application/usecases"
@@ -13,10 +14,10 @@ type ResultController struct {
 	GetFinalResultsUsecase   *usecase.GetFinalResultsUsecase
 }
 
-func NewResultController(partialResultsUseCase *usecase.GetPartialResultsUsecase, finalResultsUseCase *usecase.GetFinalResultsUsecase) *ResultController {
+func NewResultController(partialResultsUseCase *usecase.GetPartialResultsUsecase, finalResultsUsecase *usecase.GetFinalResultsUsecase) *ResultController {
 	return &ResultController{
 		GetPartialResultsUsecase: partialResultsUseCase,
-		GetFinalResultsUsecase:   finalResultsUseCase,
+		GetFinalResultsUsecase:   finalResultsUsecase,
 	}
 }
 
@@ -27,11 +28,13 @@ func NewResultController(partialResultsUseCase *usecase.GetPartialResultsUsecase
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} map[string]int
+// @Failure 404 {object} map[string]string
 // @Router /results/partial [get]
 func (controller *ResultController) GetPartialResults(context *gin.Context) {
 	results, err := controller.GetPartialResultsUsecase.Execute()
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error retrieving partial results: %v", err)
+		context.JSON(http.StatusNotFound, gin.H{"error": "Partial results not found"})
 		return
 	}
 
@@ -49,7 +52,8 @@ func (controller *ResultController) GetPartialResults(context *gin.Context) {
 func (controller *ResultController) GetFinalResults(context *gin.Context) {
 	results, err := controller.GetFinalResultsUsecase.Execute()
 	if err != nil {
-		context.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		log.Printf("Error retrieving final results: %v", err)
+		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get final results"})
 		return
 	}
 
