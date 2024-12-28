@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	"log"
 	"net/http"
 
 	"bbb-voting-service/internal/domain/dtos"
 	"bbb-voting-service/internal/infrastructure/services"
 
-	"github.com/fatih/structs"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,9 +26,9 @@ func NewCaptchaController(captchaService *services.CaptchaService) *CaptchaContr
 // @Produce  json
 // @Success 200 {object} map[string]interface{} "captcha_id and captcha_image"
 // @Router /generate-captcha [get]
-func (captcha_controller *CaptchaController) GenerateCaptcha(context *gin.Context) {
-	captcha := captcha_controller.CaptchaService.GenerateCaptcha()
-	context.JSON(http.StatusOK, structs.Map(captcha))
+func (captchaController *CaptchaController) GenerateCaptcha(context *gin.Context) {
+	captcha := captchaController.CaptchaService.GenerateCaptcha()
+	context.JSON(http.StatusOK, captcha)
 }
 
 // ServeCaptcha godoc
@@ -41,9 +41,9 @@ func (captcha_controller *CaptchaController) GenerateCaptcha(context *gin.Contex
 // @Success 200 {object} map[string]interface{} "captcha_id and captcha_image"
 // @Failure 404 {object} map[string]string "CAPTCHA not found"
 // @Router /captcha/{captcha_id} [get]
-func (captcha_controller *CaptchaController) ServeCaptcha(context *gin.Context) {
+func (captchaController *CaptchaController) ServeCaptcha(context *gin.Context) {
 	captchaID := context.Param("captcha_id")
-	captcha_controller.CaptchaService.ServeCaptcha(context.Writer, context.Request, captchaID)
+	captchaController.CaptchaService.ServeCaptcha(context.Writer, context.Request, captchaID)
 }
 
 // ValidateCaptcha godoc
@@ -57,18 +57,22 @@ func (captcha_controller *CaptchaController) ServeCaptcha(context *gin.Context) 
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 403 {object} map[string]string "Invalid CAPTCHA"
 // @Router /validate-captcha [post]
-func (captcha_controller *CaptchaController) ValidateCaptcha(context *gin.Context) {
+func (captchaController *CaptchaController) ValidateCaptcha(context *gin.Context) {
 	var request dtos.ValidateCaptchaDTO
 
 	if err := context.ShouldBindJSON(&request); err != nil {
+		log.Printf("Error binding JSON: %v", err)
 		context.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
 		return
 	}
 
-	if !captcha_controller.CaptchaService.ValidateCaptcha(request.CaptchaID, request.CaptchaSolution) {
+	token, valid := captchaController.CaptchaService.ValidateCaptcha(request.CaptchaID, request.CaptchaSolution)
+	if !valid {
+		log.Printf("Invalid CAPTCHA for ID: %s", request.CaptchaID)
 		context.JSON(http.StatusForbidden, gin.H{"error": "Invalid CAPTCHA"})
 		return
 	}
 
+	context.Header("X-Captcha-Token", token)
 	context.JSON(http.StatusOK, gin.H{"message": "CAPTCHA validated successfully"})
 }
