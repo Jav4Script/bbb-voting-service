@@ -14,60 +14,78 @@ import (
 	"gorm.io/gorm/schema"
 )
 
+// InitDB initializes the database connection and runs migrations.
 func InitDB() *gorm.DB {
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		log.Fatal("DATABASE_URL is not set")
+	databaseUser := getEnv("DATABASE_USER")
+	databasePassword := getEnv("DATABASE_PASSWORD")
+	databaseHost := getEnv("DATABASE_HOST")
+	databasePort := getEnv("DATABASE_PORT")
+	databaseName := getEnv("DATABASE_NAME")
+	databaseSchema := getEnv("DATABASE_SCHEMA")
+	appEnv := getEnv("APP_ENV")
+
+	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s", databaseUser, databasePassword, databaseHost, databasePort)
+
+	if appEnv == "development" {
+		createDatabase(databaseURL, databaseName)
+		createSchema(databaseURL, databaseName, databaseSchema)
 	}
 
-	databaseSchema := os.Getenv("DATABASE_SCHEMA")
-	if databaseSchema == "" {
-		log.Fatal("DATABASE_SCHEMA is not set")
-	}
-
-	// Create the schema if it doesn't exist
-	createSchema(databaseURL, databaseSchema)
-
-	// Append the schema to the database URL
-	databaseURLWithSchema := fmt.Sprintf("%s?search_path=%s&sslmode=disable", databaseURL, databaseSchema)
-
-	database, err := gorm.Open(postgres.Open(databaseURLWithSchema), &gorm.Config{
+	// Construct the database URL with the schema after creating the database and schema
+	databaseURLWithSchema := fmt.Sprintf("%s/%s?search_path=%s&sslmode=disable", databaseURL, databaseName, databaseSchema)
+	db, err := gorm.Open(postgres.Open(databaseURLWithSchema), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
-			TablePrefix: fmt.Sprintf("%s.", databaseSchema), // Set the schema
+			TablePrefix: fmt.Sprintf("%s.", databaseSchema),
 		},
 	})
-	if err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
-	}
+	checkError("Failed to connect to the database", err)
 
-	// Create the uuid-ossp extension if it doesn't exist
-	err = database.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
-	if err != nil {
-		log.Fatalf("Failed to create uuid-ossp extension: %v", err)
-	}
+	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
+	checkError("Failed to create uuid-ossp extension", err)
 
-	// Run database migrations using gorm
-	err = database.AutoMigrate(&models.VoteModel{}, &models.ParticipantModel{})
-	if err != nil {
-		log.Fatalf("Failed to migrate the database schema: %v", err)
-	}
+	err = db.AutoMigrate(&models.VoteModel{}, &models.ParticipantModel{})
+	checkError("Failed to migrate the database schema", err)
 
-	return database
+	return db
 }
 
-func createSchema(databaseURL, schemaName string) {
-	databaseURLWithSSLMode := fmt.Sprintf("%s?sslmode=disable", databaseURL)
-
-	// Open a connection to the database
-	db, err := sql.Open("postgres", databaseURLWithSSLMode)
-	if err != nil {
-		log.Fatalf("Failed to connect to the database: %v", err)
-	}
+// createDatabase creates the database if it doesn't exist.
+func createDatabase(databaseURL, databaseName string) {
+	// Ensure the URL uses the default 'postgres' database
+	databaseURLWithDefaultDB := fmt.Sprintf("%s/postgres?sslmode=disable", databaseURL)
+	db, err := sql.Open("postgres", databaseURLWithDefaultDB)
+	checkError("Failed to connect to the database server", err)
 	defer db.Close()
 
-	// Create the schema if it doesn't exist
+	_, err = db.Exec(fmt.Sprintf("CREATE DATABASE %s", databaseName))
+	if err != nil && err.Error() != fmt.Sprintf("pq: database \"%s\" already exists", databaseName) {
+		checkError("Failed to create database", err)
+	}
+}
+
+// createSchema creates the schema if it doesn't exist.
+func createSchema(databaseURL, databaseName, schemaName string) {
+	databaseURLWithDB := fmt.Sprintf("%s/%s?sslmode=disable", databaseURL, databaseName)
+	db, err := sql.Open("postgres", databaseURLWithDB)
+	checkError("Failed to connect to the database", err)
+	defer db.Close()
+
 	_, err = db.Exec(fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", schemaName))
+	checkError("Failed to create schema", err)
+}
+
+func getEnv(key string) string {
+	value := os.Getenv(key)
+
+	if value == "" {
+		log.Fatalf("%s is not set", key)
+	}
+
+	return value
+}
+
+func checkError(message string, err error) {
 	if err != nil {
-		log.Fatalf("Failed to create schema: %v", err)
+		log.Fatalf("%s: %v", message, err)
 	}
 }

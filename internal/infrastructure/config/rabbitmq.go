@@ -1,17 +1,20 @@
 package config
 
 import (
+	"fmt"
 	"log"
-	"os"
 
 	"github.com/streadway/amqp"
 )
 
 func InitRabbitMQ() *amqp.Channel {
-	rabbitMQURL := os.Getenv("RABBITMQ_URL")
-	if rabbitMQURL == "" {
-		log.Fatal("RABBITMQ_URL is not set")
-	}
+	rabbitMQUser := getEnv("RABBITMQ_USER")
+	rabbitMQPassword := getEnv("RABBITMQ_PASSWORD")
+	rabbitMQHost := getEnv("RABBITMQ_HOST")
+	rabbitMQPort := getEnv("RABBITMQ_PORT")
+	rabbitMQVHost := getEnv("RABBITMQ_VHOST")
+
+	rabbitMQURL := fmt.Sprintf("amqp://%s:%s@%s:%s/%s", rabbitMQUser, rabbitMQPassword, rabbitMQHost, rabbitMQPort, rabbitMQVHost)
 
 	conn, err := amqp.Dial(rabbitMQURL)
 	if err != nil {
