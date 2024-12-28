@@ -6,29 +6,38 @@ import (
 )
 
 type ProcessVoteUsecase struct {
-	VoteRepository        repositories.VoteRepository
 	ParticipantRepository repositories.ParticipantRepository
+	VoteRepository        repositories.VoteRepository
+	InMemoryRepository    repositories.InMemoryRepository
 }
 
 func NewProcessVoteUsecase(
 	voteRepository repositories.VoteRepository,
 	participantRepository repositories.ParticipantRepository,
+	inMemoryRepository repositories.InMemoryRepository,
 ) *ProcessVoteUsecase {
 	return &ProcessVoteUsecase{
 		VoteRepository:        voteRepository,
 		ParticipantRepository: participantRepository,
+		InMemoryRepository:    inMemoryRepository,
 	}
 }
 
 func (usecase *ProcessVoteUsecase) Execute(vote entities.Vote) error {
 	// Validate participant
-	_, err := usecase.ParticipantRepository.FindByID(vote.ParticipantID)
+	participant, err := usecase.ParticipantRepository.FindByID(vote.ParticipantID)
 	if err != nil {
 		return err
 	}
 
 	// Persist vote in the database
 	err = usecase.VoteRepository.Save(vote)
+	if err != nil {
+		return err
+	}
+
+	// Update the partial results in Redis
+	err = usecase.InMemoryRepository.UpdatePartialResults(vote, participant)
 	if err != nil {
 		return err
 	}

@@ -2,14 +2,19 @@ package usecase
 
 import (
 	repositories "bbb-voting-service/internal/domain/repositories"
+	mappers "bbb-voting-service/internal/infrastructure/mappers"
 )
 
 type GetFinalResultsUsecase struct {
-	VoteRepository repositories.VoteRepository
+	VoteRepository        repositories.VoteRepository
+	ParticipantRepository repositories.ParticipantRepository
 }
 
-func NewGetFinalResultsUseCase(voteRepository repositories.VoteRepository) *GetFinalResultsUsecase {
-	return &GetFinalResultsUsecase{VoteRepository: voteRepository}
+func NewGetFinalResultsUseCase(voteRepository repositories.VoteRepository, participantRepository repositories.ParticipantRepository) *GetFinalResultsUsecase {
+	return &GetFinalResultsUsecase{
+		VoteRepository:        voteRepository,
+		ParticipantRepository: participantRepository,
+	}
 }
 
 func (usecase *GetFinalResultsUsecase) Execute() (map[string]interface{}, error) {
@@ -25,16 +30,28 @@ func (usecase *GetFinalResultsUsecase) Execute() (map[string]interface{}, error)
 		return nil, err
 	}
 
-	// Get votes by hour (assuming sessionID is provided)
-	sessionID := "some-session-id" // This should be passed as a parameter
-	votesByHour, err := usecase.VoteRepository.CountVotesByHour(sessionID)
+	// Get votes by hour
+	votesByHour, err := usecase.VoteRepository.CountVotesByHour()
 	if err != nil {
 		return nil, err
 	}
 
+	// Prepare the final results with participant details
+	finalResultsWithDetails := make([]map[string]interface{}, 0, len(finalResults))
+	for participantID, votes := range finalResults {
+		participant, err := usecase.ParticipantRepository.FindByID(participantID)
+		if err != nil {
+			return nil, err
+		}
+
+		result := mappers.ToParticipantMap(participant)
+		result["votes"] = votes
+		finalResultsWithDetails = append(finalResultsWithDetails, result)
+	}
+
 	results := map[string]interface{}{
 		"total_votes":   totalVotes,
-		"final_results": finalResults,
+		"final_results": finalResultsWithDetails,
 		"votes_by_hour": votesByHour,
 	}
 

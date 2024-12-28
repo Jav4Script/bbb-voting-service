@@ -1,7 +1,10 @@
 package usecase
 
 import (
-	domain "bbb-voting-service/internal/domain/entities"
+	"log"
+
+	entities "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/errors"
 	repositories "bbb-voting-service/internal/domain/repositories"
 )
 
@@ -10,19 +13,17 @@ type CreateParticipantUsecase struct {
 }
 
 func NewCreateParticipantUsecase(participantRepository repositories.ParticipantRepository) *CreateParticipantUsecase {
-	return &CreateParticipantUsecase{ParticipantRepository: participantRepository}
+	return &CreateParticipantUsecase{
+		ParticipantRepository: participantRepository,
+	}
 }
 
-func (usecase *CreateParticipantUsecase) Execute(participant domain.Participant) (*domain.Participant, error) {
-	existingParticipant, err := usecase.ParticipantRepository.FindByName(participant.Name)
-	if err == nil {
-		return &existingParticipant, nil
-	}
-
-	participant, err = usecase.ParticipantRepository.Save(participant)
+func (usecase *CreateParticipantUsecase) Execute(participant entities.Participant) (entities.Participant, error) {
+	createdParticipant, err := usecase.ParticipantRepository.Save(participant)
 	if err != nil {
-		return nil, err
+		log.Printf("Error creating participant: %v", err)
+		return entities.Participant{}, errors.NewInfrastructureError("Failed to create participant")
 	}
 
-	return &participant, nil
+	return createdParticipant, nil
 }

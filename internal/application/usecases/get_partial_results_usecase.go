@@ -1,6 +1,7 @@
 package usecase
 
 import (
+	domain "bbb-voting-service/internal/domain/entities"
 	repositories "bbb-voting-service/internal/domain/repositories"
 )
 
@@ -14,7 +15,7 @@ func NewGetPartialResultsUsecase(inMemoryRepository repositories.InMemoryReposit
 	}
 }
 
-func (usecase *GetPartialResultsUsecase) Execute() (map[string]int, error) {
+func (usecase *GetPartialResultsUsecase) Execute() ([]domain.PartialResult, error) {
 	partialResults, err := usecase.InMemoryRepository.GetPartialResults()
 	if err != nil {
 		return nil, err

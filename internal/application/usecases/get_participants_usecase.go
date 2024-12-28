@@ -1,7 +1,10 @@
 package usecase
 
 import (
-	domain "bbb-voting-service/internal/domain/entities"
+	"log"
+
+	entities "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/errors"
 	repositories "bbb-voting-service/internal/domain/repositories"
 )
 
@@ -10,14 +13,16 @@ type GetParticipantsUsecase struct {
 }
 
 func NewGetParticipantsUsecase(participantRepository repositories.ParticipantRepository) *GetParticipantsUsecase {
-	return &GetParticipantsUsecase{ParticipantRepository: participantRepository}
+	return &GetParticipantsUsecase{
+		ParticipantRepository: participantRepository,
+	}
 }
 
-func (usecase *GetParticipantsUsecase) Execute() ([]domain.Participant, error) {
+func (usecase *GetParticipantsUsecase) Execute() ([]entities.Participant, error) {
 	participants, err := usecase.ParticipantRepository.FindAll()
-
 	if err != nil {
-		return nil, err
+		log.Printf("Error retrieving participants: %v", err)
+		return nil, errors.NewInfrastructureError("Failed to retrieve participants")
 	}
 
 	return participants, nil
