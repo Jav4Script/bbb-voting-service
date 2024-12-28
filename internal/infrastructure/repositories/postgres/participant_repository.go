@@ -72,8 +72,7 @@ func (repository *ParticipantRepository) Save(participant entities.Participant) 
 		return entities.Participant{}, err
 	}
 
-	// Map the generated ID back to the participant entity
-	participant.ID = participantModel.ID.String()
+	participantEntity := models.ToDomainParticipant(participantModel)
 
-	return participant, nil
+	return participantEntity, nil
 }
