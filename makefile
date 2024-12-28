@@ -17,7 +17,7 @@ build-prod: swag wire
 	docker build -f Dockerfile.prod -t bbb-voting-service-prod .
 
 # Execute the application for development
-run-dev: swag wire
+run-dev: build-dev
 	docker-compose up --force-recreate
 
 # Execute the application for production
@@ -32,3 +32,7 @@ stop:
 clean:
 	rm -f main
 	rm -rf docs
+
+# Clear redis
+clear-redis:
+	docker exec -it bbb-voting-redis redis-cli FLUSHALL

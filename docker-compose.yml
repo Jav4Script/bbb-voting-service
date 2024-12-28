@@ -6,16 +6,26 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DATABASE_URL=${DATABASE_URL}
-      - DATABASE_SCHEMA=${DATABASE_SCHEMA}
-      - REDIS_URL=${REDIS_URL}
-      - RABBITMQ_URL=${RABBITMQ_URL}
       - APP_ENV=${APP_ENV}
+      - DATABASE_USER=${DATABASE_USER}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_SCHEMA=${DATABASE_SCHEMA}
+      - RABBITMQ_USER=${RABBITMQ_USER}
+      - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
+      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_PORT=${RABBITMQ_PORT}
+      - RABBITMQ_VHOST=${RABBITMQ_VHOST}
+      - VOTE_QUEUE=${VOTE_QUEUE}
+      - REDIS_URL=${REDIS_URL}
     env_file:
       - .env
     volumes:
       - .:/app
-      - /app/tmp
+      - go_mod_cache:/go/pkg/mod
+      - go_cache:/root/.cache/go-build
     depends_on:
       database:
         condition: service_healthy
@@ -31,7 +41,7 @@ services:
     environment:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE}
+      POSTGRES_DB: ${DATABASE_NAME}
     env_file:
       - .env
     ports:
@@ -66,14 +76,18 @@ services:
     volumes:
       - ./scripts/queue-init.sh:/docker-entrypoint-initdb.d/rabbitmq-init.sh
     environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    env_file:
+      - .env
     healthcheck:
-      test: ["CMD-SHELL", "rabbitmqctl status"]
-      interval: 10s
+      test: ["CMD", "rabbitmqctl", "node_health_check"]
+      interval: 5s
       timeout: 5s
       retries: 5
     restart: always
 
 volumes:
   postgres_data:
+  go_mod_cache:
+  go_cache:

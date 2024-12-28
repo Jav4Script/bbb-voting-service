@@ -29,6 +29,7 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
   - [Estrutura de Pastas](#estrutura-de-pastas)
 - [Fluxo de Dados 📊](#fluxo-de-dados-)
 - [Dependências e Justificativas 📦](#dependências-e-justificativas-)
+- [Variáveis de Ambiente 🌍](#variáveis-de-ambiente-)
 - [Referências e Cheatsheets 📚](#referências-e-cheatsheets-)
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
@@ -86,8 +87,9 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 | `make build-prod`  | Compila o projeto para produção    |
 | `make run-dev`     | Executa a aplicação para desenvolvimento |
 | `make run-prod`    | Executa a aplicação para produção  |
-| `make stop`        | Para a aplicação                   |
+| `make stop`        | Para todos os containers em execução |
 | `make clean`       | Remove arquivos temporários        |
+| `make clear-redis` | Limpa todos os dados do Redis      |
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
@@ -176,9 +178,10 @@ Este sistema foi projetado com os seguintes componentes:
 
 ## Fluxo de Dados 📊
 
-A API recebe os votos e os envia para o RabbitMQ.
-Consumidores processam os votos e atualizam o Redis.
-Periodicamente, dados do Redis são sincronizados com o PostgreSQL.
+A API recebe os votos, adiciona no redis para consulta rápida de resultados e os envia para o RabbitMQ (buffering).
+Consumidores processam os votos e também atualizam o Redis para manutenção da consistência.
+De forma assíncrona, os dados são processados e persistidos no PostgreSQL.
+Periodicamente, os dados do redis são sincronizados com os dados do PostgreSQL.
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
@@ -192,6 +195,31 @@ Periodicamente, dados do Redis são sincronizados com o PostgreSQL.
 - PostgreSQL: Persistência de dados históricos.
 - Swag: Geração de documentação Swagger.
 - Wire: Injeção de dependências.
+
+<div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
+
+![-](/docs/assets/rainbow-divider.png)
+
+## Variáveis de Ambiente 🌍
+
+Aqui estão as variáveis de ambiente necessárias para configurar o projeto. Substitua os placeholders pelos valores apropriados:
+
+```plaintext
+APP_ENV=development                # Ambiente da aplicação (ex: development, production)
+DATABASE_NAME=your_database_name   # Nome do banco de dados
+DATABASE_SCHEMA=your_schema        # Esquema do banco de dados
+DATABASE_PORT=5432                 # Porta do banco de dados
+DATABASE_HOST=your_database_host   # Host do banco de dados
+DATABASE_USER=your_database_user   # Usuário do banco de dados
+DATABASE_PASSWORD=your_password    # Senha do banco de dados
+RABBITMQ_USER=your_rabbitmq_user   # Usuário do RabbitMQ
+RABBITMQ_PASSWORD=your_password    # Senha do RabbitMQ
+RABBITMQ_HOST=your_rabbitmq_host   # Host do RabbitMQ
+RABBITMQ_PORT=5672                 # Porta do RabbitMQ
+RABBITMQ_VHOST=your_vhost          # Virtual host do RabbitMQ
+VOTE_QUEUE=your_vote_queue         # Nome da fila de votos
+REDIS_URL=your_redis_url           # URL do Redis
+```
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
