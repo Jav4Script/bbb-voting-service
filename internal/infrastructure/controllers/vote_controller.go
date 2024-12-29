@@ -35,7 +35,7 @@ func NewVoteController(castVoteUseCase *votes.CastVoteUsecase, captchaService *s
 // @Success 200 {object} map[string]string
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 403 {object} map[string]string "Invalid CAPTCHA token"
-// @Router /votes [post]
+// @Router /v1/votes [post]
 func (controller *VoteController) CastVote(context *gin.Context) {
 	var voteDTO dtos.CastVoteDTO
 	if err := context.ShouldBindJSON(&voteDTO); err != nil {

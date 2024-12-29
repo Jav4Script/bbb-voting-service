@@ -52,7 +52,24 @@ info:
   title: BBB Voting System API
   version: "1.0"
 paths:
-  /captcha/{captcha_id}:
+  /health:
+    get:
+      consumes:
+      - application/json
+      description: Returns the service's status
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Health check
+      tags:
+      - health
+  /v1/captcha/{captcha_id}:
     get:
       consumes:
       - application/json
@@ -80,7 +97,7 @@ paths:
       summary: Serve CAPTCHA
       tags:
       - captcha
-  /generate-captcha:
+  /v1/generate-captcha:
     get:
       consumes:
       - application/json
@@ -96,24 +113,7 @@ paths:
       summary: Generate CAPTCHA
       tags:
       - captcha
-  /health:
-    get:
-      consumes:
-      - application/json
-      description: Returns the service's status
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      summary: Health check
-      tags:
-      - health
-  /participants:
+  /v1/participants:
     get:
       consumes:
       - application/json
@@ -153,7 +153,7 @@ paths:
       summary: Create Participant
       tags:
       - participants
-  /participants/{id}:
+  /v1/participants/{id}:
     delete:
       consumes:
       - application/json
@@ -193,7 +193,7 @@ paths:
       summary: Get Participant
       tags:
       - participants
-  /results/final:
+  /v1/results/final:
     get:
       consumes:
       - application/json
@@ -209,7 +209,7 @@ paths:
       summary: Get Final Results
       tags:
       - results
-  /results/partial:
+  /v1/results/partial:
     get:
       consumes:
       - application/json
@@ -232,7 +232,7 @@ paths:
       summary: Get Partial Results
       tags:
       - results
-  /validate-captcha:
+  /v1/validate-captcha:
     post:
       consumes:
       - application/json
@@ -268,7 +268,7 @@ paths:
       summary: Validate CAPTCHA
       tags:
       - captcha
-  /votes:
+  /v1/votes:
     post:
       consumes:
       - application/json

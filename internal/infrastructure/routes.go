@@ -23,22 +23,25 @@ func ConfigureRoutes(router *gin.Engine, captchaController *controllers.CaptchaC
 	// Swagger documentation endpoint
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// CAPTCHA endpoints
-	router.GET("/generate-captcha", captchaController.GenerateCaptcha)
-	router.GET("/captcha/:captcha_id", captchaController.ServeCaptcha)
-	router.POST("/validate-captcha", captchaController.ValidateCaptcha)
+	// Version 1 routes
+	v1 := router.Group("/v1")
+	{
+		// CAPTCHA endpoints
+		v1.GET("/generate-captcha", captchaController.GenerateCaptcha)
+		v1.GET("/captcha/:captcha_id", captchaController.ServeCaptcha)
+		v1.POST("/validate-captcha", captchaController.ValidateCaptcha)
 
-	// Participant endpoints
-	router.GET("/participants", participantController.GetParticipants)
-	router.GET("/participants/:id", participantController.GetParticipant)
-	router.POST("/participants", participantController.CreateParticipant)
-	router.DELETE("/participants/:id", participantController.DeleteParticipant)
+		// Participant endpoints
+		v1.GET("/participants", participantController.GetParticipants)
+		v1.GET("/participants/:id", participantController.GetParticipant)
+		v1.POST("/participants", participantController.CreateParticipant)
+		v1.DELETE("/participants/:id", participantController.DeleteParticipant)
 
-	// Vote endpoints
-	router.POST("/votes", voteController.CastVote)
+		// Vote endpoints
+		v1.POST("/votes", voteController.CastVote)
 
-	// Result endpoints
-	router.GET("/results/partial", resultController.GetPartialResults)
-	router.GET("/results/final", resultController.GetFinalResults)
-
+		// Result endpoints
+		v1.GET("/results/partial", resultController.GetPartialResults)
+		v1.GET("/results/final", resultController.GetFinalResults)
+	}
 }

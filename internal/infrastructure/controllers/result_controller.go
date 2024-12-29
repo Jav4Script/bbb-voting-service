@@ -29,7 +29,7 @@ func NewResultController(partialResultsUseCase *results.GetPartialResultsUsecase
 // @Produce  json
 // @Success 200 {object} map[string]int
 // @Failure 404 {object} map[string]string
-// @Router /results/partial [get]
+// @Router /v1/results/partial [get]
 func (controller *ResultController) GetPartialResults(context *gin.Context) {
 	results, err := controller.GetPartialResultsUsecase.Execute()
 	if err != nil {
@@ -48,7 +48,7 @@ func (controller *ResultController) GetPartialResults(context *gin.Context) {
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} map[string]interface{}
-// @Router /results/final [get]
+// @Router /v1/results/final [get]
 func (controller *ResultController) GetFinalResults(context *gin.Context) {
 	results, err := controller.GetFinalResultsUsecase.Execute()
 	if err != nil {

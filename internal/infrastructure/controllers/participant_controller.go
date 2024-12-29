@@ -18,10 +18,15 @@ type ParticipantController struct {
 	DeleteParticipantUsecase *participants.DeleteParticipantUsecase
 }
 
-func NewParticipantController(participantsUsecase *participants.GetParticipantsUsecase, participantUsecase *participants.GetParticipantUsecase, createParticipantUsecase *participants.CreateParticipantUsecase, deleteParticipantUsecase *participants.DeleteParticipantUsecase) *ParticipantController {
+func NewParticipantController(
+	getParticipantsUsecase *participants.GetParticipantsUsecase,
+	getParticipantUsecase *participants.GetParticipantUsecase,
+	createParticipantUsecase *participants.CreateParticipantUsecase,
+	deleteParticipantUsecase *participants.DeleteParticipantUsecase,
+) *ParticipantController {
 	return &ParticipantController{
-		GetParticipantsUsecase:   participantsUsecase,
-		GetParticipantUsecase:    participantUsecase,
+		GetParticipantsUsecase:   getParticipantsUsecase,
+		GetParticipantUsecase:    getParticipantUsecase,
 		CreateParticipantUsecase: createParticipantUsecase,
 		DeleteParticipantUsecase: deleteParticipantUsecase,
 	}
@@ -34,7 +39,7 @@ func NewParticipantController(participantsUsecase *participants.GetParticipantsU
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} []map[string]interface{}
-// @Router /participants [get]
+// @Router /v1/participants [get]
 func (controller *ParticipantController) GetParticipants(context *gin.Context) {
 	participants, err := controller.GetParticipantsUsecase.Execute()
 	if err != nil {
@@ -55,7 +60,7 @@ func (controller *ParticipantController) GetParticipants(context *gin.Context) {
 // @Produce  json
 // @Param id path string true "Participant ID"
 // @Success 200 {object} map[string]interface{}
-// @Router /participants/{id} [get]
+// @Router /v1/participants/{id} [get]
 func (controller *ParticipantController) GetParticipant(context *gin.Context) {
 	id := context.Param("id")
 	participant, err := controller.GetParticipantUsecase.Execute(id)
@@ -77,7 +82,7 @@ func (controller *ParticipantController) GetParticipant(context *gin.Context) {
 // @Produce  json
 // @Param participant body dtos.CreateParticipantDTO true "Participant"
 // @Success 201 {object} map[string]interface{}
-// @Router /participants [post]
+// @Router /v1/participants [post]
 func (controller *ParticipantController) CreateParticipant(context *gin.Context) {
 	var dto dtos.CreateParticipantDTO
 	if err := context.ShouldBindJSON(&dto); err != nil {
@@ -106,7 +111,7 @@ func (controller *ParticipantController) CreateParticipant(context *gin.Context)
 // @Produce  json
 // @Param id path string true "Participant ID"
 // @Success 204
-// @Router /participants/{id} [delete]
+// @Router /v1/participants/{id} [delete]
 func (controller *ParticipantController) DeleteParticipant(context *gin.Context) {
 	id := context.Param("id")
 	err := controller.DeleteParticipantUsecase.Execute(id)

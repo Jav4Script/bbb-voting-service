@@ -1,4 +1,3 @@
-// filepath: /Users/abarros/development/personal/bbb-voting-service/internal/infrastructure/controllers/captcha_controller.go
 package controllers
 
 import (
@@ -39,7 +38,7 @@ func NewCaptchaController(
 // @Accept  json
 // @Produce  json
 // @Success 200 {object} map[string]interface{} "captcha_id and captcha_image"
-// @Router /generate-captcha [get]
+// @Router /v1/generate-captcha [get]
 func (captchaController *CaptchaController) GenerateCaptcha(context *gin.Context) {
 	captcha := captchaController.GenerateCaptchaUsecase.Execute()
 	context.JSON(http.StatusOK, captcha)
@@ -54,7 +53,7 @@ func (captchaController *CaptchaController) GenerateCaptcha(context *gin.Context
 // @Param captcha_id path string true "CAPTCHA ID"
 // @Success 200 {object} map[string]interface{} "captcha_id and captcha_image"
 // @Failure 404 {object} map[string]string "CAPTCHA not found"
-// @Router /captcha/{captcha_id} [get]
+// @Router /v1/captcha/{captcha_id} [get]
 func (captchaController *CaptchaController) ServeCaptcha(context *gin.Context) {
 	captchaID := context.Param("captcha_id")
 	captchaController.ServeCaptchaUsecase.Execute(context.Writer, context.Request, captchaID)
@@ -70,7 +69,7 @@ func (captchaController *CaptchaController) ServeCaptcha(context *gin.Context) {
 // @Success 200 {object} map[string]string "CAPTCHA validated successfully"
 // @Failure 400 {object} map[string]string "Invalid request"
 // @Failure 403 {object} map[string]string "Invalid CAPTCHA"
-// @Router /validate-captcha [post]
+// @Router /v1/validate-captcha [post]
 func (captchaController *CaptchaController) ValidateCaptcha(context *gin.Context) {
 	var request dtos.ValidateCaptchaDTO
 

@@ -15,7 +15,33 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/captcha/{captcha_id}": {
+        "/health": {
+            "get": {
+                "description": "Returns the service's status",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/captcha/{captcha_id}": {
             "get": {
                 "description": "Serves the CAPTCHA image",
                 "consumes": [
@@ -57,7 +83,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/generate-captcha": {
+        "/v1/generate-captcha": {
             "get": {
                 "description": "Generates a new CAPTCHA",
                 "consumes": [
@@ -81,33 +107,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/health": {
-            "get": {
-                "description": "Returns the service's status",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "health"
-                ],
-                "summary": "Health check",
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    }
-                }
-            }
-        },
-        "/participants": {
+        "/v1/participants": {
             "get": {
                 "description": "Retrieves all participants",
                 "consumes": [
@@ -167,7 +167,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/participants/{id}": {
+        "/v1/participants/{id}": {
             "get": {
                 "description": "Retrieves a participant",
                 "consumes": [
@@ -227,7 +227,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/results/final": {
+        "/v1/results/final": {
             "get": {
                 "description": "Retrieves final voting results",
                 "consumes": [
@@ -251,7 +251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/results/partial": {
+        "/v1/results/partial": {
             "get": {
                 "description": "Retrieves partial voting results",
                 "consumes": [
@@ -286,7 +286,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/validate-captcha": {
+        "/v1/validate-captcha": {
             "post": {
                 "description": "Validates the CAPTCHA solution",
                 "consumes": [
@@ -341,7 +341,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/votes": {
+        "/v1/votes": {
             "post": {
                 "description": "Casts a vote for a participant",
                 "consumes": [
