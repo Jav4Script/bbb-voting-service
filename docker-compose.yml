@@ -20,6 +20,7 @@ services:
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
       - VOTE_QUEUE=${VOTE_QUEUE}
       - REDIS_URL=${REDIS_URL}
+      - SYNC_CACHE_INTERVAL=${SYNC_CACHE_INTERVAL}
     env_file:
       - .env
     volumes:

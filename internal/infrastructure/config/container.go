@@ -7,12 +7,14 @@ import (
 	"bbb-voting-service/internal/application/usecases/votes"
 	"bbb-voting-service/internal/infrastructure/consumer"
 	"bbb-voting-service/internal/infrastructure/controllers"
+	"bbb-voting-service/internal/infrastructure/jobs"
 	producer "bbb-voting-service/internal/infrastructure/producer"
 	postgres "bbb-voting-service/internal/infrastructure/repositories/postgres"
 	redisRepository "bbb-voting-service/internal/infrastructure/repositories/redis"
 	"bbb-voting-service/internal/infrastructure/services"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/robfig/cron/v3"
 	"github.com/streadway/amqp"
 	"gorm.io/gorm"
 )
@@ -26,6 +28,8 @@ type Container struct {
 	RedisRepository             *redisRepository.RedisRepository
 	RabbitMQProducer            *producer.RabbitMQProducer
 	RabbitMQConsumer            *consumer.RabbitMQConsumer
+	SyncCacheJob                *jobs.SyncCacheJob
+	Cron                        *cron.Cron
 	GenerateCaptchaUsecase      *captcha.GenerateCaptchaUsecase
 	ServeCaptchaUsecase         *captcha.ServeCaptchaUsecase
 	ValidateCaptchaUsecase      *captcha.ValidateCaptchaUsecase

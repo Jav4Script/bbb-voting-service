@@ -44,6 +44,10 @@ func main() {
 		log.Fatalf("Failed to initialize dependencies: %v", err)
 	}
 
+	// Start the cron job
+	cron := container.Cron
+	defer cron.Stop()
+
 	// Configure the application's routes
 	infrastructure.ConfigureRoutes(router, container.CaptchaController, container.ParticipantController, container.VoteController, container.ResultController)
 

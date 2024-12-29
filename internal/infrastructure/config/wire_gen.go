@@ -7,6 +7,7 @@
 package config
 
 import (
+	"bbb-voting-service/internal/application/usecases/cache"
 	"bbb-voting-service/internal/application/usecases/captcha"
 	"bbb-voting-service/internal/application/usecases/participants"
 	"bbb-voting-service/internal/application/usecases/results"
@@ -15,6 +16,7 @@ import (
 	repositories3 "bbb-voting-service/internal/domain/repositories"
 	"bbb-voting-service/internal/infrastructure/consumer"
 	"bbb-voting-service/internal/infrastructure/controllers"
+	"bbb-voting-service/internal/infrastructure/jobs"
 	"bbb-voting-service/internal/infrastructure/producer"
 	"bbb-voting-service/internal/infrastructure/repositories/postgres"
 	repositories2 "bbb-voting-service/internal/infrastructure/repositories/redis"
@@ -38,6 +40,9 @@ func InitializeContainer() (*Container, error) {
 	rabbitMQProducer := queue.NewRabbitMQProducer(channel)
 	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, participantRepository, redisRepository)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
+	syncCacheUsecase := InitSyncCacheUsecase(postgresVoteRepository, redisRepository)
+	syncCacheJob := jobs.NewSyncCacheJob(syncCacheUsecase)
+	cron := InitCron(syncCacheJob)
 	captchaService := services.NewCaptchaService(client)
 	generateCaptchaUsecase := captcha.NewGenerateCaptchaUsecase(captchaService)
 	serveCaptchaUsecase := captcha.NewServeCaptchaUsecase(captchaService)
@@ -63,6 +68,8 @@ func InitializeContainer() (*Container, error) {
 		RedisRepository:             redisRepository,
 		RabbitMQProducer:            rabbitMQProducer,
 		RabbitMQConsumer:            rabbitMQConsumer,
+		SyncCacheJob:                syncCacheJob,
+		Cron:                        cron,
 		GenerateCaptchaUsecase:      generateCaptchaUsecase,
 		ServeCaptchaUsecase:         serveCaptchaUsecase,
 		ValidateCaptchaUsecase:      validateCaptchaUsecase,
@@ -94,4 +101,11 @@ func InitCastVoteUsecase(
 	voteQueue := os.Getenv("VOTE_QUEUE")
 
 	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
+}
+
+func InitSyncCacheUsecase(
+	voteRepository repositories3.VoteRepository,
+	inMemoryRepository repositories3.InMemoryRepository,
+) *cache.SyncCacheUsecase {
+	return cache.NewSyncCacheUsecase(voteRepository, inMemoryRepository)
 }

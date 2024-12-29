@@ -6,6 +6,7 @@ package config
 import (
 	"os"
 
+	"bbb-voting-service/internal/application/usecases/cache"
 	"bbb-voting-service/internal/application/usecases/captcha"
 	"bbb-voting-service/internal/application/usecases/participants"
 	"bbb-voting-service/internal/application/usecases/results"
@@ -15,6 +16,7 @@ import (
 	domainServices "bbb-voting-service/internal/domain/services"
 	consumer "bbb-voting-service/internal/infrastructure/consumer"
 	controllers "bbb-voting-service/internal/infrastructure/controllers"
+	"bbb-voting-service/internal/infrastructure/jobs"
 	producer "bbb-voting-service/internal/infrastructure/producer"
 	postgres "bbb-voting-service/internal/infrastructure/repositories/postgres"
 	redis "bbb-voting-service/internal/infrastructure/repositories/redis"
@@ -50,6 +52,9 @@ func InitializeContainer() (*Container, error) {
 		results.NewGetPartialResultsUsecase,
 		results.NewGetFinalResultsUseCase,
 		services.NewCaptchaService,
+		InitSyncCacheUsecase,
+		jobs.NewSyncCacheJob,
+		InitCron,
 		wire.Bind(new(domainProducer.MessageProducer), new(*producer.RabbitMQProducer)),
 		wire.Bind(new(domainRepositories.InMemoryRepository), new(*redis.RedisRepository)),
 		wire.Bind(new(domainRepositories.ParticipantRepository), new(*postgres.ParticipantRepository)),
@@ -68,4 +73,11 @@ func InitCastVoteUsecase(
 	voteQueue := os.Getenv("VOTE_QUEUE")
 
 	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
+}
+
+func InitSyncCacheUsecase(
+	voteRepository domainRepositories.VoteRepository,
+	inMemoryRepository domainRepositories.InMemoryRepository,
+) *cache.SyncCacheUsecase {
+	return cache.NewSyncCacheUsecase(voteRepository, inMemoryRepository)
 }

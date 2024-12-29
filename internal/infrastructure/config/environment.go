@@ -32,6 +32,7 @@ func CheckEnvVariables() {
 		"RABBITMQ_VHOST",
 		"VOTE_QUEUE",
 		"REDIS_URL",
+		"SYNC_CACHE_INTERVAL",
 	}
 
 	for _, envVar := range requiredEnvVars {

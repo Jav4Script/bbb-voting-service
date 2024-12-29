@@ -43,6 +43,32 @@ func (redisRepository *RedisRepository) GetPartialResults() ([]entities.PartialR
 	return partialResults, nil
 }
 
+func (redisRepository *RedisRepository) UpdateCacheWithFinalResults(finalResults map[string]int) error {
+	ctx := context.Background()
+
+	partialResults := make([]entities.PartialResult, 0, len(finalResults))
+	for participantID, count := range finalResults {
+		partialResults = append(partialResults, entities.PartialResult{
+			ParticipantID: participantID,
+			Votes:         count,
+		})
+	}
+
+	partialResultsData, err := json.Marshal(partialResults)
+	if err != nil {
+		log.Printf("Error marshaling partial results data: %v", err)
+		return errors.NewInfrastructureError("Failed to marshal partial results data")
+	}
+
+	err = redisRepository.Client.Set(ctx, domain.PartialResultsKey, partialResultsData, 0).Err()
+	if err != nil {
+		log.Printf("Error saving partial results in Redis: %v", err)
+		return errors.NewInfrastructureError("Failed to save partial results in Redis")
+	}
+
+	return nil
+}
+
 func (redisRepository *RedisRepository) UpdatePartialResults(vote entities.Vote, participant entities.Participant) error {
 	ctx := context.Background()
 
