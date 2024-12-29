@@ -1,21 +1,35 @@
+// filepath: /Users/abarros/development/personal/bbb-voting-service/internal/infrastructure/controllers/captcha_controller.go
 package controllers
 
 import (
 	"log"
 	"net/http"
 
+	"bbb-voting-service/internal/application/usecases/captcha"
 	"bbb-voting-service/internal/domain/dtos"
-	"bbb-voting-service/internal/infrastructure/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CaptchaController struct {
-	CaptchaService *services.CaptchaService
+	GenerateCaptchaUsecase      *captcha.GenerateCaptchaUsecase
+	ValidateCaptchaUsecase      *captcha.ValidateCaptchaUsecase
+	ValidateCaptchaTokenUsecase *captcha.ValidateCaptchaTokenUsecase
+	ServeCaptchaUsecase         *captcha.ServeCaptchaUsecase
 }
 
-func NewCaptchaController(captchaService *services.CaptchaService) *CaptchaController {
-	return &CaptchaController{CaptchaService: captchaService}
+func NewCaptchaController(
+	generateCaptchaUsecase *captcha.GenerateCaptchaUsecase,
+	validateCaptchaUsecase *captcha.ValidateCaptchaUsecase,
+	validateCaptchaTokenUsecase *captcha.ValidateCaptchaTokenUsecase,
+	serveCaptchaUsecase *captcha.ServeCaptchaUsecase,
+) *CaptchaController {
+	return &CaptchaController{
+		GenerateCaptchaUsecase:      generateCaptchaUsecase,
+		ValidateCaptchaUsecase:      validateCaptchaUsecase,
+		ValidateCaptchaTokenUsecase: validateCaptchaTokenUsecase,
+		ServeCaptchaUsecase:         serveCaptchaUsecase,
+	}
 }
 
 // GenerateCaptcha godoc
@@ -27,7 +41,7 @@ func NewCaptchaController(captchaService *services.CaptchaService) *CaptchaContr
 // @Success 200 {object} map[string]interface{} "captcha_id and captcha_image"
 // @Router /generate-captcha [get]
 func (captchaController *CaptchaController) GenerateCaptcha(context *gin.Context) {
-	captcha := captchaController.CaptchaService.GenerateCaptcha()
+	captcha := captchaController.GenerateCaptchaUsecase.Execute()
 	context.JSON(http.StatusOK, captcha)
 }
 
@@ -43,7 +57,7 @@ func (captchaController *CaptchaController) GenerateCaptcha(context *gin.Context
 // @Router /captcha/{captcha_id} [get]
 func (captchaController *CaptchaController) ServeCaptcha(context *gin.Context) {
 	captchaID := context.Param("captcha_id")
-	captchaController.CaptchaService.ServeCaptcha(context.Writer, context.Request, captchaID)
+	captchaController.ServeCaptchaUsecase.Execute(context.Writer, context.Request, captchaID)
 }
 
 // ValidateCaptcha godoc
@@ -66,7 +80,7 @@ func (captchaController *CaptchaController) ValidateCaptcha(context *gin.Context
 		return
 	}
 
-	token, valid := captchaController.CaptchaService.ValidateCaptcha(request.CaptchaID, request.CaptchaSolution)
+	token, valid := captchaController.ValidateCaptchaUsecase.Execute(request.CaptchaID, request.CaptchaSolution)
 	if !valid {
 		log.Printf("Invalid CAPTCHA for ID: %s", request.CaptchaID)
 		context.JSON(http.StatusForbidden, gin.H{"error": "Invalid CAPTCHA"})

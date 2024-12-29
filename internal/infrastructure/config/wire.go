@@ -6,9 +6,13 @@ package config
 import (
 	"os"
 
-	usecases "bbb-voting-service/internal/application/usecases"
-	messageProducer "bbb-voting-service/internal/domain/producer"
-	repositories "bbb-voting-service/internal/domain/repositories"
+	"bbb-voting-service/internal/application/usecases/captcha"
+	"bbb-voting-service/internal/application/usecases/participants"
+	"bbb-voting-service/internal/application/usecases/results"
+	"bbb-voting-service/internal/application/usecases/votes"
+	domainProducer "bbb-voting-service/internal/domain/producer"
+	domainRepositories "bbb-voting-service/internal/domain/repositories"
+	domainServices "bbb-voting-service/internal/domain/services"
 	consumer "bbb-voting-service/internal/infrastructure/consumer"
 	controllers "bbb-voting-service/internal/infrastructure/controllers"
 	producer "bbb-voting-service/internal/infrastructure/producer"
@@ -24,39 +28,44 @@ func InitializeContainer() (*Container, error) {
 		InitDB,
 		InitRedis,
 		InitRabbitMQ,
+		redis.NewRedisRepository,
 		postgres.NewParticipantRepository,
 		postgres.NewPostgresVoteRepository,
-		redis.NewRedisRepository,
 		producer.NewRabbitMQProducer,
+		consumer.NewRabbitMQConsumer,
 		controllers.NewCaptchaController,
 		controllers.NewParticipantController,
 		controllers.NewVoteController,
 		controllers.NewResultController,
-		consumer.NewRabbitMQConsumer,
-		usecases.NewCreateParticipantUsecase,
-		usecases.NewGetParticipantsUsecase,
-		usecases.NewGetParticipantUsecase,
-		usecases.NewDeleteParticipantUsecase,
+		captcha.NewGenerateCaptchaUsecase,
+		captcha.NewServeCaptchaUsecase,
+		captcha.NewValidateCaptchaUsecase,
+		captcha.NewValidateCaptchaTokenUsecase,
+		participants.NewCreateParticipantUsecase,
+		participants.NewGetParticipantsUsecase,
+		participants.NewGetParticipantUsecase,
+		participants.NewDeleteParticipantUsecase,
 		InitCastVoteUsecase,
-		usecases.NewProcessVoteUsecase,
-		usecases.NewGetPartialResultsUsecase,
-		usecases.NewGetFinalResultsUseCase,
+		votes.NewProcessVoteUsecase,
+		results.NewGetPartialResultsUsecase,
+		results.NewGetFinalResultsUseCase,
 		services.NewCaptchaService,
-		wire.Bind(new(repositories.InMemoryRepository), new(*redis.RedisRepository)),
-		wire.Bind(new(messageProducer.MessageProducer), new(*producer.RabbitMQProducer)),
-		wire.Bind(new(repositories.ParticipantRepository), new(*postgres.ParticipantRepository)), // Adicione esta linha
-		wire.Bind(new(repositories.VoteRepository), new(*postgres.PostgresVoteRepository)),
+		wire.Bind(new(domainProducer.MessageProducer), new(*producer.RabbitMQProducer)),
+		wire.Bind(new(domainRepositories.InMemoryRepository), new(*redis.RedisRepository)),
+		wire.Bind(new(domainRepositories.ParticipantRepository), new(*postgres.ParticipantRepository)),
+		wire.Bind(new(domainRepositories.VoteRepository), new(*postgres.PostgresVoteRepository)),
+		wire.Bind(new(domainServices.CaptchaService), new(*services.CaptchaService)),
 		wire.Struct(new(Container), "*"),
 	)
 	return &Container{}, nil
 }
 
 func InitCastVoteUsecase(
-	inMemoryRepository repositories.InMemoryRepository,
-	messageProducer messageProducer.MessageProducer,
-	participantRepository repositories.ParticipantRepository,
-) *usecases.CastVoteUsecase {
+	inMemoryRepository domainRepositories.InMemoryRepository,
+	domainProducer domainProducer.MessageProducer,
+	participantRepository domainRepositories.ParticipantRepository,
+) *votes.CastVoteUsecase {
 	voteQueue := os.Getenv("VOTE_QUEUE")
 
-	return usecases.NewCastVoteUsecase(inMemoryRepository, messageProducer, participantRepository, voteQueue)
+	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
 }

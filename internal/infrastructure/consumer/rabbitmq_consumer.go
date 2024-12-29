@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	usecase "bbb-voting-service/internal/application/usecases"
+	"bbb-voting-service/internal/application/usecases/votes"
 	entities "bbb-voting-service/internal/domain/entities"
 
 	"github.com/streadway/amqp"
@@ -12,10 +12,10 @@ import (
 
 type RabbitMQConsumer struct {
 	Channel            *amqp.Channel
-	ProcessVoteUsecase *usecase.ProcessVoteUsecase
+	ProcessVoteUsecase *votes.ProcessVoteUsecase
 }
 
-func NewRabbitMQConsumer(channel *amqp.Channel, processVoteUsecase *usecase.ProcessVoteUsecase) *RabbitMQConsumer {
+func NewRabbitMQConsumer(channel *amqp.Channel, processVoteUsecase *votes.ProcessVoteUsecase) *RabbitMQConsumer {
 	return &RabbitMQConsumer{
 		Channel:            channel,
 		ProcessVoteUsecase: processVoteUsecase,

@@ -480,7 +480,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/",
 	Schemes:          []string{"http", "https"},
 	Title:            "BBB Voting System API",
-	Description:      "This is the API for the BBB Voting System",
+	Description:      "This is the API for the BBB Voting System.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

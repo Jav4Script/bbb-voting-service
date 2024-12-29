@@ -4,21 +4,21 @@ import (
 	"log"
 	"net/http"
 
-	usecase "bbb-voting-service/internal/application/usecases"
-	dtos "bbb-voting-service/internal/domain/dtos"
-	mappers "bbb-voting-service/internal/infrastructure/mappers"
+	"bbb-voting-service/internal/application/usecases/participants"
+	"bbb-voting-service/internal/domain/dtos"
+	"bbb-voting-service/internal/infrastructure/mappers"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ParticipantController struct {
-	GetParticipantsUsecase   *usecase.GetParticipantsUsecase
-	GetParticipantUsecase    *usecase.GetParticipantUsecase
-	CreateParticipantUsecase *usecase.CreateParticipantUsecase
-	DeleteParticipantUsecase *usecase.DeleteParticipantUsecase
+	GetParticipantsUsecase   *participants.GetParticipantsUsecase
+	GetParticipantUsecase    *participants.GetParticipantUsecase
+	CreateParticipantUsecase *participants.CreateParticipantUsecase
+	DeleteParticipantUsecase *participants.DeleteParticipantUsecase
 }
 
-func NewParticipantController(participantsUsecase *usecase.GetParticipantsUsecase, participantUsecase *usecase.GetParticipantUsecase, createParticipantUsecase *usecase.CreateParticipantUsecase, deleteParticipantUsecase *usecase.DeleteParticipantUsecase) *ParticipantController {
+func NewParticipantController(participantsUsecase *participants.GetParticipantsUsecase, participantUsecase *participants.GetParticipantUsecase, createParticipantUsecase *participants.CreateParticipantUsecase, deleteParticipantUsecase *participants.DeleteParticipantUsecase) *ParticipantController {
 	return &ParticipantController{
 		GetParticipantsUsecase:   participantsUsecase,
 		GetParticipantUsecase:    participantUsecase,

@@ -4,17 +4,17 @@ import (
 	"log"
 	"net/http"
 
-	usecase "bbb-voting-service/internal/application/usecases"
+	"bbb-voting-service/internal/application/usecases/results"
 
 	"github.com/gin-gonic/gin"
 )
 
 type ResultController struct {
-	GetPartialResultsUsecase *usecase.GetPartialResultsUsecase
-	GetFinalResultsUsecase   *usecase.GetFinalResultsUsecase
+	GetPartialResultsUsecase *results.GetPartialResultsUsecase
+	GetFinalResultsUsecase   *results.GetFinalResultsUsecase
 }
 
-func NewResultController(partialResultsUseCase *usecase.GetPartialResultsUsecase, finalResultsUsecase *usecase.GetFinalResultsUsecase) *ResultController {
+func NewResultController(partialResultsUseCase *results.GetPartialResultsUsecase, finalResultsUsecase *results.GetFinalResultsUsecase) *ResultController {
 	return &ResultController{
 		GetPartialResultsUsecase: partialResultsUseCase,
 		GetFinalResultsUsecase:   finalResultsUsecase,

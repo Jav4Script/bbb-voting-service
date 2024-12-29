@@ -5,7 +5,7 @@
     ],
     "swagger": "2.0",
     "info": {
-        "description": "This is the API for the BBB Voting System",
+        "description": "This is the API for the BBB Voting System.",
         "title": "BBB Voting System API",
         "contact": {},
         "version": "1.0"

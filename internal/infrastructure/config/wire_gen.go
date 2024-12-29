@@ -7,7 +7,10 @@
 package config
 
 import (
-	"bbb-voting-service/internal/application/usecases"
+	"bbb-voting-service/internal/application/usecases/captcha"
+	"bbb-voting-service/internal/application/usecases/participants"
+	"bbb-voting-service/internal/application/usecases/results"
+	"bbb-voting-service/internal/application/usecases/votes"
 	queue2 "bbb-voting-service/internal/domain/producer"
 	repositories3 "bbb-voting-service/internal/domain/repositories"
 	"bbb-voting-service/internal/infrastructure/consumer"
@@ -33,42 +36,50 @@ func InitializeContainer() (*Container, error) {
 	postgresVoteRepository := repositories.NewPostgresVoteRepository(db)
 	redisRepository := repositories2.NewRedisRepository(client)
 	rabbitMQProducer := queue.NewRabbitMQProducer(channel)
-	processVoteUsecase := usecase.NewProcessVoteUsecase(postgresVoteRepository, participantRepository, redisRepository)
-	castVoteUsecase := InitCastVoteUsecase(redisRepository, rabbitMQProducer, participantRepository)
-	createParticipantUsecase := usecase.NewCreateParticipantUsecase(participantRepository)
-	getParticipantsUsecase := usecase.NewGetParticipantsUsecase(participantRepository)
-	deleteParticipantUsecase := usecase.NewDeleteParticipantUsecase(participantRepository)
-	getParticipantUsecase := usecase.NewGetParticipantUsecase(participantRepository)
-	getPartialResultsUsecase := usecase.NewGetPartialResultsUsecase(redisRepository)
-	getFinalResultsUsecase := usecase.NewGetFinalResultsUseCase(postgresVoteRepository, participantRepository)
+	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, participantRepository, redisRepository)
+	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
 	captchaService := services.NewCaptchaService(client)
-	captchaController := controllers.NewCaptchaController(captchaService)
+	generateCaptchaUsecase := captcha.NewGenerateCaptchaUsecase(captchaService)
+	serveCaptchaUsecase := captcha.NewServeCaptchaUsecase(captchaService)
+	validateCaptchaUsecase := captcha.NewValidateCaptchaUsecase(captchaService)
+	validateCaptchaTokenUsecase := captcha.NewValidateCaptchaTokenUsecase(captchaService)
+	createParticipantUsecase := participants.NewCreateParticipantUsecase(participantRepository)
+	getParticipantsUsecase := participants.NewGetParticipantsUsecase(participantRepository)
+	deleteParticipantUsecase := participants.NewDeleteParticipantUsecase(participantRepository)
+	getParticipantUsecase := participants.NewGetParticipantUsecase(participantRepository)
+	castVoteUsecase := InitCastVoteUsecase(redisRepository, rabbitMQProducer, participantRepository)
+	getPartialResultsUsecase := results.NewGetPartialResultsUsecase(redisRepository)
+	getFinalResultsUsecase := results.NewGetFinalResultsUseCase(postgresVoteRepository, participantRepository)
+	captchaController := controllers.NewCaptchaController(generateCaptchaUsecase, validateCaptchaUsecase, validateCaptchaTokenUsecase, serveCaptchaUsecase)
 	participantController := controllers.NewParticipantController(getParticipantsUsecase, getParticipantUsecase, createParticipantUsecase, deleteParticipantUsecase)
 	voteController := controllers.NewVoteController(castVoteUsecase, captchaService)
 	resultController := controllers.NewResultController(getPartialResultsUsecase, getFinalResultsUsecase)
-	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
 	container := &Container{
-		DB:                       db,
-		RedisClient:              client,
-		RabbitMQChannel:          channel,
-		ParticipantRepository:    participantRepository,
-		VoteRepository:           postgresVoteRepository,
-		RedisRepository:          redisRepository,
-		RabbitMQProducer:         rabbitMQProducer,
-		ProcessVoteUsecase:       processVoteUsecase,
-		CastVoteUsecase:          castVoteUsecase,
-		CreateParticipantUsecase: createParticipantUsecase,
-		GetParticipantsUsecase:   getParticipantsUsecase,
-		DeleteParticipantUsecase: deleteParticipantUsecase,
-		GetParticipantUsecase:    getParticipantUsecase,
-		GetPartialResultsUsecase: getPartialResultsUsecase,
-		GetFinalResultsUseCase:   getFinalResultsUsecase,
-		CaptchaService:           captchaService,
-		CaptchaController:        captchaController,
-		ParticipantController:    participantController,
-		VoteController:           voteController,
-		ResultController:         resultController,
-		RabbitMQConsumer:         rabbitMQConsumer,
+		DB:                          db,
+		RedisClient:                 client,
+		RabbitMQChannel:             channel,
+		ParticipantRepository:       participantRepository,
+		VoteRepository:              postgresVoteRepository,
+		RedisRepository:             redisRepository,
+		RabbitMQProducer:            rabbitMQProducer,
+		RabbitMQConsumer:            rabbitMQConsumer,
+		GenerateCaptchaUsecase:      generateCaptchaUsecase,
+		ServeCaptchaUsecase:         serveCaptchaUsecase,
+		ValidateCaptchaUsecase:      validateCaptchaUsecase,
+		ValidateCaptchaTokenUsecase: validateCaptchaTokenUsecase,
+		CreateParticipantUsecase:    createParticipantUsecase,
+		GetParticipantsUsecase:      getParticipantsUsecase,
+		DeleteParticipantUsecase:    deleteParticipantUsecase,
+		GetParticipantUsecase:       getParticipantUsecase,
+		CastVoteUsecase:             castVoteUsecase,
+		ProcessVoteUsecase:          processVoteUsecase,
+		GetPartialResultsUsecase:    getPartialResultsUsecase,
+		GetFinalResultsUseCase:      getFinalResultsUsecase,
+		CaptchaService:              captchaService,
+		CaptchaController:           captchaController,
+		ParticipantController:       participantController,
+		VoteController:              voteController,
+		ResultController:            resultController,
 	}
 	return container, nil
 }
@@ -77,10 +88,10 @@ func InitializeContainer() (*Container, error) {
 
 func InitCastVoteUsecase(
 	inMemoryRepository repositories3.InMemoryRepository,
-	messageProducer queue2.MessageProducer,
+	domainProducer queue2.MessageProducer,
 	participantRepository repositories3.ParticipantRepository,
-) *usecase.CastVoteUsecase {
+) *votes.CastVoteUsecase {
 	voteQueue := os.Getenv("VOTE_QUEUE")
 
-	return usecase.NewCastVoteUsecase(inMemoryRepository, messageProducer, participantRepository, voteQueue)
+	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
 }

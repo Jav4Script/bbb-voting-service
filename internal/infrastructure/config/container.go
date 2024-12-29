@@ -1,13 +1,16 @@
 package config
 
 import (
-	usecases "bbb-voting-service/internal/application/usecases"
-	consumer "bbb-voting-service/internal/infrastructure/consumer"
-	controllers "bbb-voting-service/internal/infrastructure/controllers"
+	"bbb-voting-service/internal/application/usecases/captcha"
+	"bbb-voting-service/internal/application/usecases/participants"
+	"bbb-voting-service/internal/application/usecases/results"
+	"bbb-voting-service/internal/application/usecases/votes"
+	"bbb-voting-service/internal/infrastructure/consumer"
+	"bbb-voting-service/internal/infrastructure/controllers"
 	producer "bbb-voting-service/internal/infrastructure/producer"
 	postgres "bbb-voting-service/internal/infrastructure/repositories/postgres"
 	redisRepository "bbb-voting-service/internal/infrastructure/repositories/redis"
-	services "bbb-voting-service/internal/infrastructure/services"
+	"bbb-voting-service/internal/infrastructure/services"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/streadway/amqp"
@@ -15,25 +18,29 @@ import (
 )
 
 type Container struct {
-	DB                       *gorm.DB
-	RedisClient              *redis.Client
-	RabbitMQChannel          *amqp.Channel
-	ParticipantRepository    *postgres.ParticipantRepository
-	VoteRepository           *postgres.PostgresVoteRepository
-	RedisRepository          *redisRepository.RedisRepository
-	RabbitMQProducer         *producer.RabbitMQProducer
-	ProcessVoteUsecase       *usecases.ProcessVoteUsecase
-	CastVoteUsecase          *usecases.CastVoteUsecase
-	CreateParticipantUsecase *usecases.CreateParticipantUsecase
-	GetParticipantsUsecase   *usecases.GetParticipantsUsecase
-	DeleteParticipantUsecase *usecases.DeleteParticipantUsecase
-	GetParticipantUsecase    *usecases.GetParticipantUsecase
-	GetPartialResultsUsecase *usecases.GetPartialResultsUsecase
-	GetFinalResultsUseCase   *usecases.GetFinalResultsUsecase
-	CaptchaService           *services.CaptchaService
-	CaptchaController        *controllers.CaptchaController
-	ParticipantController    *controllers.ParticipantController
-	VoteController           *controllers.VoteController
-	ResultController         *controllers.ResultController
-	RabbitMQConsumer         *consumer.RabbitMQConsumer
+	DB                          *gorm.DB
+	RedisClient                 *redis.Client
+	RabbitMQChannel             *amqp.Channel
+	ParticipantRepository       *postgres.ParticipantRepository
+	VoteRepository              *postgres.PostgresVoteRepository
+	RedisRepository             *redisRepository.RedisRepository
+	RabbitMQProducer            *producer.RabbitMQProducer
+	RabbitMQConsumer            *consumer.RabbitMQConsumer
+	GenerateCaptchaUsecase      *captcha.GenerateCaptchaUsecase
+	ServeCaptchaUsecase         *captcha.ServeCaptchaUsecase
+	ValidateCaptchaUsecase      *captcha.ValidateCaptchaUsecase
+	ValidateCaptchaTokenUsecase *captcha.ValidateCaptchaTokenUsecase
+	CreateParticipantUsecase    *participants.CreateParticipantUsecase
+	GetParticipantsUsecase      *participants.GetParticipantsUsecase
+	DeleteParticipantUsecase    *participants.DeleteParticipantUsecase
+	GetParticipantUsecase       *participants.GetParticipantUsecase
+	CastVoteUsecase             *votes.CastVoteUsecase
+	ProcessVoteUsecase          *votes.ProcessVoteUsecase
+	GetPartialResultsUsecase    *results.GetPartialResultsUsecase
+	GetFinalResultsUseCase      *results.GetFinalResultsUsecase
+	CaptchaService              *services.CaptchaService
+	CaptchaController           *controllers.CaptchaController
+	ParticipantController       *controllers.ParticipantController
+	VoteController              *controllers.VoteController
+	ResultController            *controllers.ResultController
 }

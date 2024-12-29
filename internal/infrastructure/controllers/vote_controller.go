@@ -4,8 +4,8 @@ import (
 	"log"
 	"net/http"
 
-	usecase "bbb-voting-service/internal/application/usecases"
-	dtos "bbb-voting-service/internal/domain/dtos"
+	"bbb-voting-service/internal/application/usecases/votes"
+	"bbb-voting-service/internal/domain/dtos"
 	"bbb-voting-service/internal/infrastructure/mappers"
 	"bbb-voting-service/internal/infrastructure/services"
 
@@ -13,11 +13,11 @@ import (
 )
 
 type VoteController struct {
-	CastVoteUsecase *usecase.CastVoteUsecase
+	CastVoteUsecase *votes.CastVoteUsecase
 	CaptchaService  *services.CaptchaService
 }
 
-func NewVoteController(castVoteUseCase *usecase.CastVoteUsecase, captchaService *services.CaptchaService) *VoteController {
+func NewVoteController(castVoteUseCase *votes.CastVoteUsecase, captchaService *services.CaptchaService) *VoteController {
 	return &VoteController{
 		CastVoteUsecase: castVoteUseCase,
 		CaptchaService:  captchaService,

@@ -34,5 +34,6 @@ go.work
 # Log files
 *.log
 
-# Docs
-/docs/
+# Ignore temporary or cache files in docs
+/docs/*.tmp
+/docs/*.cache
