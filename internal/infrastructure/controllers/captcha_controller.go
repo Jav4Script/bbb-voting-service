@@ -87,5 +87,6 @@ func (captchaController *CaptchaController) ValidateCaptcha(context *gin.Context
 	}
 
 	context.Header("X-Captcha-Token", token)
+	context.Header("Access-Control-Expose-Headers", "X-Captcha-Token")
 	context.JSON(http.StatusOK, gin.H{"message": "CAPTCHA validated successfully"})
 }
