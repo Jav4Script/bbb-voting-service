@@ -46,8 +46,8 @@ func (redisRepository *RedisRepository) GetPartialResults() ([]entities.PartialR
 func (redisRepository *RedisRepository) UpdateCacheWithFinalResults(finalResults entities.FinalResults) error {
 	ctx := context.Background()
 
-	partialResults := make([]entities.PartialResult, 0, len(finalResults.FinalResults))
-	for _, participant := range finalResults.FinalResults {
+	partialResults := make([]entities.PartialResult, 0, len(finalResults.ParticipantResults))
+	for _, participant := range finalResults.ParticipantResults {
 		partialResults = append(partialResults, entities.PartialResult{
 			ID:     participant.ID,
 			Name:   participant.Name,
