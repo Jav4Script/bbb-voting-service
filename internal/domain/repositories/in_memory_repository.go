@@ -5,5 +5,5 @@ import domain "bbb-voting-service/internal/domain/entities"
 type InMemoryRepository interface {
 	GetPartialResults() ([]domain.PartialResult, error)
 	UpdatePartialResults(vote domain.Vote, participant domain.Participant) error
-	UpdateCacheWithFinalResults(finalResults map[string]int) error
+	UpdateCacheWithFinalResults(finalResults domain.FinalResults) error
 }

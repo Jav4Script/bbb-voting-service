@@ -1,9 +1,9 @@
-package domain
+package entities
 
 type PartialResult struct {
-	ParticipantID     string `json:"participant_id"`
-	ParticipantName   string `json:"participant_name"`
-	ParticipantAge    int    `json:"participant_age"`
-	ParticipantGender string `json:"participant_gender"`
-	Votes             int    `json:"votes"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Age    int    `json:"age"`
+	Gender string `json:"gender"`
+	Votes  int    `json:"votes"`
 }

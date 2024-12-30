@@ -1,4 +1,4 @@
-package queue
+package producer
 
 import "github.com/streadway/amqp"
 

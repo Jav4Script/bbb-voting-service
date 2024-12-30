@@ -1,4 +1,4 @@
-package domain
+package entities
 
 type Vote struct {
 	ID            string `json:"id"`

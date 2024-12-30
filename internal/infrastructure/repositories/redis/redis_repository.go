@@ -43,14 +43,17 @@ func (redisRepository *RedisRepository) GetPartialResults() ([]entities.PartialR
 	return partialResults, nil
 }
 
-func (redisRepository *RedisRepository) UpdateCacheWithFinalResults(finalResults map[string]int) error {
+func (redisRepository *RedisRepository) UpdateCacheWithFinalResults(finalResults entities.FinalResults) error {
 	ctx := context.Background()
 
-	partialResults := make([]entities.PartialResult, 0, len(finalResults))
-	for participantID, count := range finalResults {
+	partialResults := make([]entities.PartialResult, 0, len(finalResults.FinalResults))
+	for _, participant := range finalResults.FinalResults {
 		partialResults = append(partialResults, entities.PartialResult{
-			ParticipantID: participantID,
-			Votes:         count,
+			ID:     participant.ID,
+			Name:   participant.Name,
+			Age:    participant.Age,
+			Gender: participant.Gender,
+			Votes:  participant.Votes,
 		})
 	}
 
@@ -73,12 +76,13 @@ func (redisRepository *RedisRepository) UpdatePartialResults(vote entities.Vote,
 	ctx := context.Background()
 
 	// Check if the vote already exists
-	log.Printf("Checking if vote exists: %s", vote.ID) // Adicione este log
+	log.Printf("Checking if vote exists: %s", vote.ID)
 	exists, err := redisRepository.Client.SIsMember(ctx, domain.VoteSetKey, vote.ID).Result()
 	if err != nil {
 		log.Printf("Error checking vote existence in Redis: %v", err)
 		return errors.NewInfrastructureError("Failed to check vote existence in Redis")
 	}
+
 	if exists {
 		log.Printf("Vote already exists: %s", vote.ID)
 		return errors.NewBusinessError("Vote already exists", http.StatusConflict)
@@ -94,7 +98,7 @@ func (redisRepository *RedisRepository) UpdatePartialResults(vote entities.Vote,
 	// Update the partial results with the new vote
 	updated := false
 	for i, result := range partialResults {
-		if result.ParticipantID == vote.ParticipantID {
+		if result.ID == vote.ParticipantID {
 			partialResults[i].Votes++
 			updated = true
 			break
@@ -119,7 +123,7 @@ func (redisRepository *RedisRepository) UpdatePartialResults(vote entities.Vote,
 	}
 
 	// Add the vote ID to the set of processed votes
-	log.Printf("Adding vote ID to Redis set: %s", vote.ID) // Adicione este log
+	log.Printf("Adding vote ID to Redis set: %s", vote.ID)
 	err = redisRepository.Client.SAdd(ctx, domain.VoteSetKey, vote.ID).Err()
 	if err != nil {
 		log.Printf("Error adding vote ID to Redis set: %v", err)

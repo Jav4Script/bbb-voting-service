@@ -12,7 +12,7 @@ import (
 	"bbb-voting-service/internal/application/usecases/participants"
 	"bbb-voting-service/internal/application/usecases/results"
 	"bbb-voting-service/internal/application/usecases/votes"
-	queue2 "bbb-voting-service/internal/domain/producer"
+	producer2 "bbb-voting-service/internal/domain/producer"
 	repositories3 "bbb-voting-service/internal/domain/repositories"
 	"bbb-voting-service/internal/infrastructure/consumer"
 	"bbb-voting-service/internal/infrastructure/controllers"
@@ -37,10 +37,11 @@ func InitializeContainer() (*Container, error) {
 	participantRepository := repositories.NewParticipantRepository(db)
 	postgresVoteRepository := repositories.NewPostgresVoteRepository(db)
 	redisRepository := repositories2.NewRedisRepository(client)
-	rabbitMQProducer := queue.NewRabbitMQProducer(channel)
-	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, participantRepository, redisRepository)
+	rabbitMQProducer := producer.NewRabbitMQProducer(channel)
+	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, participantRepository)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
-	syncCacheUsecase := InitSyncCacheUsecase(postgresVoteRepository, redisRepository)
+	getFinalResultsUsecase := results.NewGetFinalResultsUseCase(postgresVoteRepository, participantRepository)
+	syncCacheUsecase := InitSyncCacheUsecase(getFinalResultsUsecase, redisRepository)
 	syncCacheJob := jobs.NewSyncCacheJob(syncCacheUsecase)
 	cron := InitCron(syncCacheJob)
 	captchaService := services.NewCaptchaService(client)
@@ -54,7 +55,6 @@ func InitializeContainer() (*Container, error) {
 	getParticipantUsecase := participants.NewGetParticipantUsecase(participantRepository)
 	castVoteUsecase := InitCastVoteUsecase(redisRepository, rabbitMQProducer, participantRepository)
 	getPartialResultsUsecase := results.NewGetPartialResultsUsecase(redisRepository)
-	getFinalResultsUsecase := results.NewGetFinalResultsUseCase(postgresVoteRepository, participantRepository)
 	captchaController := controllers.NewCaptchaController(generateCaptchaUsecase, validateCaptchaUsecase, validateCaptchaTokenUsecase, serveCaptchaUsecase)
 	participantController := controllers.NewParticipantController(getParticipantsUsecase, getParticipantUsecase, createParticipantUsecase, deleteParticipantUsecase)
 	voteController := controllers.NewVoteController(castVoteUsecase, captchaService)
@@ -95,7 +95,7 @@ func InitializeContainer() (*Container, error) {
 
 func InitCastVoteUsecase(
 	inMemoryRepository repositories3.InMemoryRepository,
-	domainProducer queue2.MessageProducer,
+	domainProducer producer2.MessageProducer,
 	participantRepository repositories3.ParticipantRepository,
 ) *votes.CastVoteUsecase {
 	voteQueue := os.Getenv("VOTE_QUEUE")
@@ -103,9 +103,16 @@ func InitCastVoteUsecase(
 	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
 }
 
-func InitSyncCacheUsecase(
+func InitGetFinalResultsUsecase(
 	voteRepository repositories3.VoteRepository,
+	participantRepository repositories3.ParticipantRepository,
+) *results.GetFinalResultsUsecase {
+	return results.NewGetFinalResultsUseCase(voteRepository, participantRepository)
+}
+
+func InitSyncCacheUsecase(
+	getFinalResultsUsecase *results.GetFinalResultsUsecase,
 	inMemoryRepository repositories3.InMemoryRepository,
 ) *cache.SyncCacheUsecase {
-	return cache.NewSyncCacheUsecase(voteRepository, inMemoryRepository)
+	return cache.NewSyncCacheUsecase(getFinalResultsUsecase, inMemoryRepository)
 }

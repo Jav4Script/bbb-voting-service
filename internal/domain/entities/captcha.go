@@ -1,4 +1,4 @@
-package domain
+package entities
 
 type Captcha struct {
 	ID    string `json:"id"`

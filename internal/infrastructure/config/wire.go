@@ -75,9 +75,16 @@ func InitCastVoteUsecase(
 	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
 }
 
-func InitSyncCacheUsecase(
+func InitGetFinalResultsUsecase(
 	voteRepository domainRepositories.VoteRepository,
+	participantRepository domainRepositories.ParticipantRepository,
+) *results.GetFinalResultsUsecase {
+	return results.NewGetFinalResultsUseCase(voteRepository, participantRepository)
+}
+
+func InitSyncCacheUsecase(
+	getFinalResultsUsecase *results.GetFinalResultsUsecase,
 	inMemoryRepository domainRepositories.InMemoryRepository,
 ) *cache.SyncCacheUsecase {
-	return cache.NewSyncCacheUsecase(voteRepository, inMemoryRepository)
+	return cache.NewSyncCacheUsecase(getFinalResultsUsecase, inMemoryRepository)
 }

@@ -10,7 +10,7 @@ import (
 
 type VoteModel struct {
 	ID            uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
-	ParticipantID string    `gorm:"not null"`
+	ParticipantID uuid.UUID `gorm:"type:uuid;not null"`
 	VoterID       string    `gorm:"not null"`
 	IPAddress     string    `gorm:"not null"`
 	UserAgent     string    `gorm:"not null"`
@@ -27,7 +27,7 @@ func (VoteModel) TableName() string {
 func ToDomainVote(voteModel VoteModel) entities.Vote {
 	return entities.Vote{
 		ID:            voteModel.ID.String(),
-		ParticipantID: voteModel.ParticipantID,
+		ParticipantID: voteModel.ParticipantID.String(),
 		VoterID:       voteModel.VoterID,
 		IPAddress:     voteModel.IPAddress,
 		UserAgent:     voteModel.UserAgent,
@@ -40,12 +40,13 @@ func ToDomainVote(voteModel VoteModel) entities.Vote {
 
 func ToModelVote(vote entities.Vote) VoteModel {
 	id, _ := uuid.Parse(vote.ID)
+	participantID, _ := uuid.Parse(vote.ParticipantID)
 	createdAt, _ := time.Parse(time.RFC3339, vote.CreatedAt)
 	updatedAt, _ := time.Parse(time.RFC3339, vote.UpdatedAt)
 
 	return VoteModel{
 		ID:            id,
-		ParticipantID: vote.ParticipantID,
+		ParticipantID: participantID,
 		VoterID:       vote.VoterID,
 		IPAddress:     vote.IPAddress,
 		UserAgent:     vote.UserAgent,

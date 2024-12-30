@@ -11,5 +11,5 @@ type VoteRepository interface {
 	CountTotalVotes() (int, error)
 	CountVotesByParticipant(participantID string) (int, error)
 	CountVotesByHour() (map[time.Time]int, error)
-	GetFinalResults() (map[string]int, error)
+	GetParticipantResults() (map[string]domain.ParticipantResult, error)
 }

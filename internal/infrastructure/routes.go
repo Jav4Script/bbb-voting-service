@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"bbb-voting-service/internal/infrastructure/controllers"
-	"bbb-voting-service/internal/infrastructure/middleware"
+	"bbb-voting-service/internal/infrastructure/middlewares"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -13,7 +13,7 @@ import (
 
 // ConfigureRoutes configures the routes for the application
 func ConfigureRoutes(router *gin.Engine, captchaController *controllers.CaptchaController, participantController *controllers.ParticipantController, voteController *controllers.VoteController, resultController *controllers.ResultController) {
-	router.Use(middleware.ErrorHandler())
+	router.Use(middlewares.ErrorHandler())
 
 	// Health check endpoint
 	router.GET("/health", func(context *gin.Context) {
