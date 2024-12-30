@@ -27,7 +27,6 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 - [Comandos Úteis](#comandos-úteis)
 - [Arquitetura](#arquitetura)
   - [Estrutura de Pastas](#estrutura-de-pastas)
-- [Fluxo de Dados](#fluxo-de-dados)
 - [Dependências e Justificativas](#dependências-e-justificativas)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
 - [Referências e Cheatsheets](#referências-e-cheatsheets)
@@ -112,8 +111,11 @@ Este sistema foi projetado com os seguintes componentes:
 
 ```plaintext
 .
+├── .air.toml                   # Configuração do Air para hot reload
 ├── .env                        # Arquivo de configuração de variáveis de ambiente
+├── .env.example                # Exemplo de arquivo de configuração de variáveis de ambiente
 ├── .gitignore                  # Arquivo para especificar quais arquivos/diretórios o Git deve ignorar
+├── .vscode/                    # Configurações do Visual Studio Code
 ├── cmd/
 │   └── main.go                 # Arquivo principal da aplicação
 ├── docker-compose.yml          # Arquivo de configuração do Docker Compose
@@ -131,27 +133,42 @@ Este sistema foi projetado com os seguintes componentes:
 │   │   └── usecases/           # Casos de uso da aplicação
 │   │       ├── cast_vote_usecase.go          # Caso de uso para registrar um voto
 │   │       ├── create_participant_usecase.go # Caso de uso para criar um participante
+│   │       ├── get_final_results_usecase.go  # Caso de uso para obter resultados finais
+│   │       ├── sync_cache_usecase.go         # Caso de uso para sincronizar o cache
 │   │       └── ...                            # Outros casos de uso
 │   ├── domain/
+│   │   ├── constants.go        # Constantes do domínio
 │   │   ├── dtos/               # Data Transfer Objects
 │   │   ├── entities/           # Entidades do domínio
 │   │   │   ├── participant.go  # Entidade de participante
 │   │   │   └── vote.go         # Entidade de voto
+│   │   ├── errors/             # Definições de erros do domínio
 │   │   ├── producer/           # Interface de produtor de mensagens
-│   │   └── repositories/       # Interfaces de repositórios
+│   │   ├── repositories/       # Interfaces de repositórios
+│   │   └── services/           # Interfaces de serviços
 │   ├── infrastructure/
 │   │   ├── config/             # Configurações da infraestrutura
 │   │   │   ├── database.go     # Configuração do banco de dados
 │   │   │   ├── environment.go  # Carregamento de variáveis de ambiente
 │   │   │   ├── rabbitmq.go     # Configuração do RabbitMQ
 │   │   │   ├── redis.go        # Configuração do Redis
+│   │   │   └── wire.go         # Configuração do Wire para injeção de dependências
 │   │   ├── consumer/           # Consumidores de mensagens
 │   │   │   └── rabbitmq_consumer.go          # Consumidor de mensagens do RabbitMQ
 │   │   ├── controllers/        # Controladores da aplicação
 │   │   │   ├── participant_controller.go     # Controlador de participantes
+│   │   │   ├── vote_controller.go            # Controlador de votos
 │   │   │   └── ...                            # Outros controladores
+│   │   ├── jobs/               # Jobs da aplicação
+│   │   │   └── sync_cache_job.go             # Job para sincronizar o cache
+│   │   ├── mappers/            # Mapeadores de entidades
+│   │   │   ├── participant_result_mapper.go  # Mapeador de resultados de participantes
+│   │   │   ├── final_results_mapper.go       # Mapeador de resultados finais
+│   │   │   └── vote_mapper.go                # Mapeador de votos
+│   │   ├── middlewares/        # Middlewares da aplicação
 │   │   ├── models/             # Modelos da aplicação
 │   │   │   ├── participant_model.go          # Modelo de participante
+│   │   │   ├── vote_model.go                 # Modelo de voto
 │   │   │   └── ...                            # Outros modelos
 │   │   ├── producer/           # Implementação do produtor de mensagens
 │   │   │   └── rabbitmq_producer.go          # Implementação do RabbitMQ
@@ -170,18 +187,14 @@ Este sistema foi projetado com os seguintes componentes:
 ├── README.md                   # Documentação do projeto
 └── scripts/
     └── queue-init.sh           # Script de inicialização da fila
+├── tmp/
+│   ├── build-errors.log        # Log de erros de build
+│   └── main                    # Binário principal gerado pelo build
 ```
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
 ![-](/docs/assets/rainbow-divider.png)
-
-## Fluxo de Dados 
-
-A API recebe os votos, adiciona no redis para consulta rápida de resultados e os envia para o RabbitMQ (buffering).
-Consumidores processam os votos e também atualizam o Redis para manutenção da consistência.
-De forma assíncrona, os dados são processados e persistidos no PostgreSQL.
-Periodicamente, os dados do redis são sincronizados com os dados do PostgreSQL.
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
