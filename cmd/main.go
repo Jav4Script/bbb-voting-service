@@ -3,11 +3,14 @@ package main
 import (
 	"log"
 	"os"
+	"strings"
+	"time"
 
 	_ "bbb-voting-service/docs" // Import generated Swagger docs
 	"bbb-voting-service/internal/infrastructure"
 	"bbb-voting-service/internal/infrastructure/config"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -35,8 +38,21 @@ func main() {
 	// Get the port from the environment variable
 	port := getPort()
 
+	// Get the allowed origins from the environment variable
+	allowedOrigins := getAllowedOrigins()
+
 	// Initialize the Gin router
 	router := gin.Default()
+
+	// Configure CORS middleware
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     allowedOrigins,
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	// Initialize dependencies using wire
 	container, err := config.InitializeContainer()
@@ -68,4 +84,13 @@ func getPort() string {
 		port = "8080"
 	}
 	return port
+}
+
+// Function to retrieve the allowed origins from the environment, with a default value if not set
+func getAllowedOrigins() []string {
+	origins := os.Getenv("CORS_ALLOWED_ORIGINS")
+	if origins == "" {
+		return []string{"http://localhost:9000"}
+	}
+	return strings.Split(origins, ",")
 }

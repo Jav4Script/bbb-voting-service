@@ -212,6 +212,7 @@ DATABASE_PORT=5432                                   # Porta do banco de dados
 DATABASE_HOST=your_database_host                     # Host do banco de dados
 DATABASE_USER=your_database_user                     # Usuário do banco de dados
 DATABASE_PASSWORD=your_password                      # Senha do banco de dados
+CORS_ALLOWED_ORIGINS=your_cors_allowed_origins       # Origens permitidas pelo cors
 RABBITMQ_USER=your_rabbitmq_user                     # Usuário do RabbitMQ
 RABBITMQ_PASSWORD=your_password                      # Senha do RabbitMQ
 RABBITMQ_HOST=your_rabbitmq_host                     # Host do RabbitMQ
