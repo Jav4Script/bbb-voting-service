@@ -1,9 +1,25 @@
-# Config file for air
+# Config file for `air` hot reload tool
+
 [build]
-bin = "main"
-cmd = "go build -o ./main ./cmd/main.go"
-include_ext = ["go", "tpl", "tmpl", "html"]
-exclude_dir = ["assets", "tmp", "vendor", "scripts"]
-exclude_file = ["README.md"]
-follow_symlink = true
-full_bin = "APP_ENV=development ./main"
+  # Configurações de build
+  cmd = "go build -o ./tmp/main ./cmd/main.go"
+  bin = "./tmp/main"
+  full_bin = "APP_ENV=development ./tmp/main"
+  # Diretórios e arquivos a serem monitorados
+  include_ext = ["go", "tpl", "tmpl", "html"]
+  exclude_dir = ["assets", "tmp", "vendor"]
+  exclude_file = ["README.md"]
+  exclude_regex = ["_test.go"]
+  # Diretórios e arquivos a serem monitorados para reiniciar o servidor
+  watch_dir = ["."]
+  watch_file = [".env"]
+
+[log]
+  # Configurações de log
+  level = "debug"
+  color = "true"
+  timestamp = "true"
+
+[dev]
+  # Configurações de desenvolvimento
+  cmd = "go run ./cmd/main.go"
