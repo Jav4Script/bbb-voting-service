@@ -68,6 +68,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    command: ["redis-server", "--maxclients", "20000"]
     restart: always
 
   rabbitmq:
