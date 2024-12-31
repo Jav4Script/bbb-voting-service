@@ -4,22 +4,24 @@ go 1.23
 
 require (
 	github.com/dchest/captcha v1.1.0
+	github.com/gin-contrib/cors v1.7.3
 	github.com/gin-gonic/gin v1.10.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/wire v0.6.0
 	github.com/joho/godotenv v1.5.1
+	github.com/lib/pq v1.10.9
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/streadway/amqp v1.1.0
 	github.com/swaggo/files v1.0.1
 	github.com/swaggo/gin-swagger v1.6.0
 	github.com/swaggo/swag v1.16.4
 	gorm.io/driver/postgres v1.5.11
 	gorm.io/gorm v1.25.12
-	github.com/gin-contrib/cors v1.7.3
-	github.com/robfig/cron/v3 v3.0.1
-	github.com/lib/pq v1.10.9
+	github.com/vmihailenco/msgpack/v5 v5.4.1
 )
 
 require (
+	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/bytedance/sonic v1.12.6 // indirect
 	github.com/bytedance/sonic/loader v0.2.1 // indirect
