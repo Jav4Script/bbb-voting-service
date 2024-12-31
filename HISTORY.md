@@ -93,7 +93,7 @@ O projeto de votação de participantes do BBB foi desenvolvido com foco em alta
 - Antes de registrar o voto, o usuário precisa passar por um desafio de CAPTCHA para verificar se é um usuário legítimo.
 - Recebe os votos, adiciona no redis para consulta rápida de resultados e os envia para o RabbitMQ (buffering).
 - Consumidores processam os votos de forma assíncrona. Os dados são processados e persistidos no PostgreSQL.
-- Periodicamente, os dados do redis são sincronizados com os dados do PostgreSQL.
+- Periodicamente, os dados de participantes e resultados dos votos do redis são sincronizados com os dados do PostgreSQL.
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
