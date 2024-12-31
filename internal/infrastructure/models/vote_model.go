@@ -9,7 +9,7 @@ import (
 )
 
 type VoteModel struct {
-	ID            uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	ID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	ParticipantID uuid.UUID `gorm:"type:uuid;not null"`
 	VoterID       string    `gorm:"not null"`
 	IPAddress     string    `gorm:"not null"`

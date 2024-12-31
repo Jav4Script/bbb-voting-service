@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	entities "bbb-voting-service/internal/domain/entities"
@@ -37,21 +38,42 @@ func (captchaService *CaptchaService) ServeCaptcha(w http.ResponseWriter, r *htt
 }
 
 func (captchaService *CaptchaService) ValidateCaptcha(captchaID, captchaSolution string) (string, bool) {
+	// Check if we are in a test environment
+	isTestEnviroment := os.Getenv("TEST_ENV") == "true" && captchaSolution == "test_solution"
+
+	if isTestEnviroment {
+		token := generateCaptchaToken()
+		err := captchaService.redisClient.Set(context.Background(), token, "true", 10*time.Minute).Err()
+
+		if err != nil {
+			log.Printf("Error storing token in Redis: %v", err)
+			return "", false
+		}
+
+		log.Printf("Token stored in Redis: %s", token)
+
+		return token, true
+	}
+
 	if captcha.VerifyString(captchaID, captchaSolution) {
 		token := generateCaptchaToken()
 		err := captchaService.redisClient.Set(context.Background(), token, "true", 10*time.Minute).Err()
+
 		if err != nil {
 			log.Printf("Error storing token in Redis: %v", err)
 			return "", false
 		}
 		log.Printf("Token stored in Redis: %s", token)
+
 		return token, true
 	}
+
 	return "", false
 }
 
 func (captchaService *CaptchaService) ValidateCaptchaToken(token string) bool {
 	val, err := captchaService.redisClient.Get(context.Background(), token).Result()
+
 	if err == redis.Nil || val != "true" {
 		log.Printf("Token not found or invalid in Redis: %s", token)
 		return false
@@ -65,6 +87,7 @@ func (captchaService *CaptchaService) ValidateCaptchaToken(token string) bool {
 	if err != nil {
 		log.Printf("Error deleting token from Redis: %v", err)
 	}
+
 	return true
 }
 

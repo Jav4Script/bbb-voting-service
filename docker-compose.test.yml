@@ -1,28 +1,29 @@
 services:
-  app:
+  app-test:
     image: cosmtrek/air
-    container_name: bbb-voting-app
+    container_name: bbb-voting-app-test
     working_dir: /app
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
-      - APP_ENV=${APP_ENV}
-      - APP_PORT=${APP_PORT}
+      - APP_ENV=test
+      - APP_PORT=8081
       - DATABASE_USER=${DATABASE_USER}
       - DATABASE_PASSWORD=${DATABASE_PASSWORD}
-      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_HOST=test-database
       - DATABASE_PORT=${DATABASE_PORT}
-      - DATABASE_NAME=${DATABASE_NAME}
-      - DATABASE_SCHEMA=${DATABASE_SCHEMA}
+      - DATABASE_NAME=bbb_voting_test
+      - DATABASE_SCHEMA=bbb_schema_test
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
       - RABBITMQ_USER=${RABBITMQ_USER}
       - RABBITMQ_PASSWORD=${RABBITMQ_PASSWORD}
-      - RABBITMQ_HOST=${RABBITMQ_HOST}
+      - RABBITMQ_HOST=test-rabbitmq
       - RABBITMQ_PORT=${RABBITMQ_PORT}
       - RABBITMQ_VHOST=${RABBITMQ_VHOST}
       - VOTE_QUEUE=${VOTE_QUEUE}
-      - REDIS_URL=${REDIS_URL}
+      - REDIS_URL=redis://test-redis:6379/0
       - SYNC_CACHE_INTERVAL=${SYNC_CACHE_INTERVAL}
+      - TEST_ENV=true
     env_file:
       - .env
     volumes:
@@ -30,27 +31,28 @@ services:
       - go_mod_cache:/go/pkg/mod
       - go_cache:/root/.cache/go-build
     depends_on:
-      database:
+      test-database:
         condition: service_healthy
-      redis:
+      test-redis:
         condition: service_healthy
-      rabbitmq:
+      test-rabbitmq:
         condition: service_healthy
     restart: always
 
-  database:
+  test-database:
     image: postgres:15
-    container_name: bbb-voting-database
+    container_name: bbb-voting-test-database
     environment:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
-      POSTGRES_DB: ${DATABASE_NAME}
+      POSTGRES_DB: bbb_voting_test
     env_file:
       - .env
     ports:
-      - "5433:5432"
+      - "5434:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./scripts:/scripts
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER}"]
       interval: 5s
@@ -58,11 +60,11 @@ services:
       retries: 5
     restart: always
 
-  redis:
+  test-redis:
     image: redis:7
-    container_name: bbb-voting-redis
+    container_name: bbb-voting-test-redis
     ports:
-      - "6379:6379"
+      - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -70,14 +72,14 @@ services:
       retries: 5
     restart: always
 
-  rabbitmq:
+  test-rabbitmq:
     image: rabbitmq:3-management
-    container_name: bbb-voting-rabbitmq
+    container_name: bbb-voting-test-rabbitmq
     ports:
-      - "5672:5672"
-      - "15672:15672"
+      - "5673:5672"
+      - "15673:15672"
     volumes:
-      - ./scripts/rabbitmq-init.sh:/docker-entrypoint-initdb.d/rabbitmq-init.sh
+      - ./scripts:/scripts
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
@@ -90,7 +92,24 @@ services:
       retries: 5
     restart: always
 
+  k6:
+    image: loadimpact/k6
+    container_name: k6-load-tester
+    volumes:
+      - ./load-tests:/scripts
+    entrypoint: ["k6", "run", "/scripts/load-tests.js"]
+    depends_on:
+      - app-test
+      - test-database
+    profiles:
+      - load-test
+    environment:
+      APP_NAME: bbb-voting-app-test
+      APP_PORT: 8081
+    env_file:
+      - .env
+
 volumes:
-  postgres_data:
+  postgres_test_data:
   go_mod_cache:
   go_cache:

@@ -26,7 +26,7 @@ func InitDB() *gorm.DB {
 
 	databaseURL := fmt.Sprintf("postgres://%s:%s@%s:%s", databaseUser, databasePassword, databaseHost, databasePort)
 
-	if appEnv == "development" {
+	if appEnv == "development" || appEnv == "test" {
 		createDatabase(databaseURL, databaseName)
 		createSchema(databaseURL, databaseName, databaseSchema)
 	}
@@ -39,9 +39,6 @@ func InitDB() *gorm.DB {
 		},
 	})
 	checkError("Failed to connect to the database", err)
-
-	err = db.Exec("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"").Error
-	checkError("Failed to create uuid-ossp extension", err)
 
 	err = db.AutoMigrate(&models.VoteModel{}, &models.ParticipantModel{})
 	checkError("Failed to migrate the database schema", err)

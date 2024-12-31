@@ -1,0 +1,8 @@
+#!/bin/bash
+set -e
+
+export RABBITMQ_DEFAULT_USER="$RABBITMQ_USER"
+export RABBITMQ_DEFAULT_PASS="$RABBITMQ_PASSWORD"
+export VOTE_QUEUE="$VOTE_QUEUE"
+
+rabbitmqadmin -u ${RABBITMQ_USER} -p ${RABBITMQ_PASSWORD} delete queue name=${VOTE_QUEUE}

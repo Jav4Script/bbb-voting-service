@@ -9,7 +9,7 @@ import (
 )
 
 type ParticipantModel struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
 	Name      string    `gorm:"not null"`
 	Age       int       `gorm:"not null"`
 	Gender    string    `gorm:"not null"`

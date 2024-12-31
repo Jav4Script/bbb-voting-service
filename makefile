@@ -24,6 +24,14 @@ run-dev: build-dev
 run-prod: swag wire
 	docker run -p 8080:8080 --env-file .env bbb-voting-service-prod
 
+# Run load tests
+load-tests: build-dev
+	docker-compose -f docker-compose.test.yml up -d --force-recreate app-test test-database test-redis test-rabbitmq
+	docker-compose -f docker-compose.test.yml --profile load-test up --force-recreate k6
+	clear-test-resources
+	docker-compose -f docker-compose.test.yml down
+
+
 # Stop all running containers
 stop:
 	docker-compose down
@@ -36,3 +44,9 @@ clean:
 # Clear redis
 clear-redis:
 	docker exec -it bbb-voting-redis redis-cli FLUSHALL
+
+# Clear test resources
+clear-test-resources:
+	docker-compose -f docker-compose.test.yml exec -it test-database sh -c "chmod +x /scripts/database-cleanup.sh && /scripts/database-cleanup.sh"
+	docker-compose -f docker-compose.test.yml exec -it test-redis redis-cli FLUSHALL
+	docker-compose -f docker-compose.test.yml exec -it test-rabbitmq sh -c "chmod +x /scripts/rabbitmq-cleanup.sh && /scripts/rabbitmq-cleanup.sh"
