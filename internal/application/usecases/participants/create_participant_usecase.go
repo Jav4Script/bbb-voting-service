@@ -3,18 +3,20 @@ package participants
 import (
 	"log"
 
-	entities "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/entities"
 	"bbb-voting-service/internal/domain/errors"
-	repositories "bbb-voting-service/internal/domain/repositories"
+	"bbb-voting-service/internal/domain/repositories"
 )
 
 type CreateParticipantUsecase struct {
-	ParticipantRepository repositories.ParticipantRepository
+	InMemoryParticipantRepository repositories.InMemoryParticipantRepository
+	ParticipantRepository         repositories.ParticipantRepository
 }
 
-func NewCreateParticipantUsecase(participantRepository repositories.ParticipantRepository) *CreateParticipantUsecase {
+func NewCreateParticipantUsecase(participantRepository repositories.ParticipantRepository, inMemoryParticipantRepository repositories.InMemoryParticipantRepository) *CreateParticipantUsecase {
 	return &CreateParticipantUsecase{
-		ParticipantRepository: participantRepository,
+		InMemoryParticipantRepository: inMemoryParticipantRepository,
+		ParticipantRepository:         participantRepository,
 	}
 }
 
@@ -23,6 +25,12 @@ func (usecase *CreateParticipantUsecase) Execute(participant entities.Participan
 	if err != nil {
 		log.Printf("Error creating participant: %v", err)
 		return entities.Participant{}, errors.NewInfrastructureError("Failed to create participant")
+	}
+
+	err = usecase.InMemoryParticipantRepository.Save(createdParticipant)
+	if err != nil {
+		log.Printf("Error saving participant in memory: %v", err)
+		return entities.Participant{}, errors.NewInfrastructureError("Failed to save participant in memory")
 	}
 
 	return createdParticipant, nil

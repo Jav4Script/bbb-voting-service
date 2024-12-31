@@ -13,13 +13,13 @@ import (
 	"bbb-voting-service/internal/application/usecases/results"
 	"bbb-voting-service/internal/application/usecases/votes"
 	producer2 "bbb-voting-service/internal/domain/producer"
-	repositories3 "bbb-voting-service/internal/domain/repositories"
+	repositories2 "bbb-voting-service/internal/domain/repositories"
 	"bbb-voting-service/internal/infrastructure/consumer"
 	"bbb-voting-service/internal/infrastructure/controllers"
 	"bbb-voting-service/internal/infrastructure/jobs"
 	"bbb-voting-service/internal/infrastructure/producer"
 	"bbb-voting-service/internal/infrastructure/repositories/postgres"
-	repositories2 "bbb-voting-service/internal/infrastructure/repositories/redis"
+	"bbb-voting-service/internal/infrastructure/repositories/redis"
 	"bbb-voting-service/internal/infrastructure/services"
 	"os"
 )
@@ -34,85 +34,123 @@ func InitializeContainer() (*Container, error) {
 	db := InitDB()
 	client := InitRedis()
 	channel := InitRabbitMQ()
-	participantRepository := repositories.NewParticipantRepository(db)
+	postgresParticipantRepository := repositories.NewPostgresParticipantRepository(db)
 	postgresVoteRepository := repositories.NewPostgresVoteRepository(db)
-	redisRepository := repositories2.NewRedisRepository(client)
+	redisParticipantRepository := redis.NewRedisParticipantRepository(client)
+	redisResultRepository := redis.NewRedisResultRepository(client)
 	rabbitMQProducer := producer.NewRabbitMQProducer(channel)
-	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, participantRepository)
+	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, postgresParticipantRepository)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
-	getFinalResultsUsecase := results.NewGetFinalResultsUseCase(postgresVoteRepository, participantRepository)
-	syncCacheUsecase := InitSyncCacheUsecase(getFinalResultsUsecase, redisRepository)
-	syncCacheJob := jobs.NewSyncCacheJob(syncCacheUsecase)
+	syncParticipantsCacheUsecase := InitSyncParticipantsCacheUsecase(postgresParticipantRepository, redisParticipantRepository)
+	getFinalResultsUsecase := results.NewGetFinalResultsUsecase(postgresVoteRepository)
+	syncResultsCacheUsecase := InitSyncResultsCacheUsecase(getFinalResultsUsecase, redisResultRepository)
+	syncCacheJob := InitSyncCacheJob(syncParticipantsCacheUsecase, syncResultsCacheUsecase)
 	cron := InitCron(syncCacheJob)
 	captchaService := services.NewCaptchaService(client)
 	generateCaptchaUsecase := captcha.NewGenerateCaptchaUsecase(captchaService)
 	serveCaptchaUsecase := captcha.NewServeCaptchaUsecase(captchaService)
 	validateCaptchaUsecase := captcha.NewValidateCaptchaUsecase(captchaService)
 	validateCaptchaTokenUsecase := captcha.NewValidateCaptchaTokenUsecase(captchaService)
-	createParticipantUsecase := participants.NewCreateParticipantUsecase(participantRepository)
-	getParticipantsUsecase := participants.NewGetParticipantsUsecase(participantRepository)
-	deleteParticipantUsecase := participants.NewDeleteParticipantUsecase(participantRepository)
-	getParticipantUsecase := participants.NewGetParticipantUsecase(participantRepository)
-	castVoteUsecase := InitCastVoteUsecase(redisRepository, rabbitMQProducer, participantRepository)
-	getPartialResultsUsecase := results.NewGetPartialResultsUsecase(redisRepository)
+	createParticipantUsecase := InitCreateParticipantUsecase(postgresParticipantRepository, redisParticipantRepository)
+	getParticipantsUsecase := InitGetParticipantsUsecase(postgresParticipantRepository, redisParticipantRepository)
+	deleteParticipantUsecase := InitDeleteParticipantUsecase(postgresParticipantRepository, redisParticipantRepository)
+	getParticipantUsecase := InitGetParticipantUsecase(postgresParticipantRepository, redisParticipantRepository)
+	castVoteUsecase := InitCastVoteUsecase(redisParticipantRepository, redisResultRepository, rabbitMQProducer)
+	getPartialResultsUsecase := results.NewGetPartialResultsUsecase(redisResultRepository)
 	captchaController := controllers.NewCaptchaController(generateCaptchaUsecase, validateCaptchaUsecase, validateCaptchaTokenUsecase, serveCaptchaUsecase)
 	participantController := controllers.NewParticipantController(getParticipantsUsecase, getParticipantUsecase, createParticipantUsecase, deleteParticipantUsecase)
 	voteController := controllers.NewVoteController(castVoteUsecase, captchaService)
 	resultController := controllers.NewResultController(getPartialResultsUsecase, getFinalResultsUsecase)
 	container := &Container{
-		DB:                          db,
-		RedisClient:                 client,
-		RabbitMQChannel:             channel,
-		ParticipantRepository:       participantRepository,
-		VoteRepository:              postgresVoteRepository,
-		RedisRepository:             redisRepository,
-		RabbitMQProducer:            rabbitMQProducer,
-		RabbitMQConsumer:            rabbitMQConsumer,
-		SyncCacheJob:                syncCacheJob,
-		Cron:                        cron,
-		GenerateCaptchaUsecase:      generateCaptchaUsecase,
-		ServeCaptchaUsecase:         serveCaptchaUsecase,
-		ValidateCaptchaUsecase:      validateCaptchaUsecase,
-		ValidateCaptchaTokenUsecase: validateCaptchaTokenUsecase,
-		CreateParticipantUsecase:    createParticipantUsecase,
-		GetParticipantsUsecase:      getParticipantsUsecase,
-		DeleteParticipantUsecase:    deleteParticipantUsecase,
-		GetParticipantUsecase:       getParticipantUsecase,
-		CastVoteUsecase:             castVoteUsecase,
-		ProcessVoteUsecase:          processVoteUsecase,
-		GetPartialResultsUsecase:    getPartialResultsUsecase,
-		GetFinalResultsUseCase:      getFinalResultsUsecase,
-		CaptchaService:              captchaService,
-		CaptchaController:           captchaController,
-		ParticipantController:       participantController,
-		VoteController:              voteController,
-		ResultController:            resultController,
+		DB:                            db,
+		RedisClient:                   client,
+		RabbitMQChannel:               channel,
+		ParticipantRepository:         postgresParticipantRepository,
+		VoteRepository:                postgresVoteRepository,
+		InMemoryParticipantRepository: redisParticipantRepository,
+		InMemoryResultRepository:      redisResultRepository,
+		RabbitMQProducer:              rabbitMQProducer,
+		RabbitMQConsumer:              rabbitMQConsumer,
+		SyncCacheJob:                  syncCacheJob,
+		Cron:                          cron,
+		GenerateCaptchaUsecase:        generateCaptchaUsecase,
+		ServeCaptchaUsecase:           serveCaptchaUsecase,
+		ValidateCaptchaUsecase:        validateCaptchaUsecase,
+		ValidateCaptchaTokenUsecase:   validateCaptchaTokenUsecase,
+		CreateParticipantUsecase:      createParticipantUsecase,
+		GetParticipantsUsecase:        getParticipantsUsecase,
+		DeleteParticipantUsecase:      deleteParticipantUsecase,
+		GetParticipantUsecase:         getParticipantUsecase,
+		CastVoteUsecase:               castVoteUsecase,
+		ProcessVoteUsecase:            processVoteUsecase,
+		GetPartialResultsUsecase:      getPartialResultsUsecase,
+		GetFinalResultsUseCase:        getFinalResultsUsecase,
+		CaptchaService:                captchaService,
+		CaptchaController:             captchaController,
+		ParticipantController:         participantController,
+		VoteController:                voteController,
+		ResultController:              resultController,
 	}
 	return container, nil
 }
 
 // wire.go:
 
+func InitCreateParticipantUsecase(
+	participantRepository repositories2.ParticipantRepository,
+	inMemoryParticipantRepository repositories2.InMemoryParticipantRepository,
+) *participants.CreateParticipantUsecase {
+	return participants.NewCreateParticipantUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitGetParticipantUsecase(
+	participantRepository repositories2.ParticipantRepository,
+	inMemoryParticipantRepository repositories2.InMemoryParticipantRepository,
+) *participants.GetParticipantUsecase {
+	return participants.NewGetParticipantUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitGetParticipantsUsecase(
+	participantRepository repositories2.ParticipantRepository,
+	inMemoryParticipantRepository repositories2.InMemoryParticipantRepository,
+) *participants.GetParticipantsUsecase {
+	return participants.NewGetParticipantsUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitDeleteParticipantUsecase(
+	participantRepository repositories2.ParticipantRepository,
+	inMemoryParticipantRepository repositories2.InMemoryParticipantRepository,
+) *participants.DeleteParticipantUsecase {
+	return participants.NewDeleteParticipantUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
 func InitCastVoteUsecase(
-	inMemoryRepository repositories3.InMemoryRepository,
+	inMemoryParticipantRepository repositories2.InMemoryParticipantRepository,
+	inMemoryResultRepository repositories2.InMemoryResultRepository,
 	domainProducer producer2.MessageProducer,
-	participantRepository repositories3.ParticipantRepository,
 ) *votes.CastVoteUsecase {
 	voteQueue := os.Getenv("VOTE_QUEUE")
 
-	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
+	return votes.NewCastVoteUsecase(inMemoryParticipantRepository, inMemoryResultRepository, domainProducer, voteQueue)
 }
 
-func InitGetFinalResultsUsecase(
-	voteRepository repositories3.VoteRepository,
-	participantRepository repositories3.ParticipantRepository,
-) *results.GetFinalResultsUsecase {
-	return results.NewGetFinalResultsUseCase(voteRepository, participantRepository)
+func InitSyncCacheJob(
+	syncParticipantsCacheUsecase *cache.SyncParticipantsCacheUsecase,
+	syncResultsCacheUsecase *cache.SyncResultsCacheUsecase,
+) *jobs.SyncCacheJob {
+	return jobs.NewSyncCacheJob(syncResultsCacheUsecase, syncParticipantsCacheUsecase)
 }
 
-func InitSyncCacheUsecase(
+func InitSyncParticipantsCacheUsecase(
+	participantRepository repositories2.ParticipantRepository,
+	inMemoryParticipantRepository repositories2.InMemoryParticipantRepository,
+) *cache.SyncParticipantsCacheUsecase {
+	return cache.NewSyncParticipantsCacheUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitSyncResultsCacheUsecase(
 	getFinalResultsUsecase *results.GetFinalResultsUsecase,
-	inMemoryRepository repositories3.InMemoryRepository,
-) *cache.SyncCacheUsecase {
-	return cache.NewSyncCacheUsecase(getFinalResultsUsecase, inMemoryRepository)
+	inMemoryResultRepository repositories2.InMemoryResultRepository,
+) *cache.SyncResultsCacheUsecase {
+	return cache.NewSyncResultsCacheUsecase(getFinalResultsUsecase, inMemoryResultRepository)
 }

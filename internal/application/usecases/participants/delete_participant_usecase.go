@@ -4,16 +4,18 @@ import (
 	"log"
 
 	"bbb-voting-service/internal/domain/errors"
-	repositories "bbb-voting-service/internal/domain/repositories"
+	"bbb-voting-service/internal/domain/repositories"
 )
 
 type DeleteParticipantUsecase struct {
-	ParticipantRepository repositories.ParticipantRepository
+	InMemoryParticipantRepository repositories.InMemoryParticipantRepository
+	ParticipantRepository         repositories.ParticipantRepository
 }
 
-func NewDeleteParticipantUsecase(participantRepository repositories.ParticipantRepository) *DeleteParticipantUsecase {
+func NewDeleteParticipantUsecase(participantRepository repositories.ParticipantRepository, inMemoryParticipantRepository repositories.InMemoryParticipantRepository) *DeleteParticipantUsecase {
 	return &DeleteParticipantUsecase{
-		ParticipantRepository: participantRepository,
+		InMemoryParticipantRepository: inMemoryParticipantRepository,
+		ParticipantRepository:         participantRepository,
 	}
 }
 
@@ -28,6 +30,12 @@ func (usecase *DeleteParticipantUsecase) Execute(id string) error {
 	if err != nil {
 		log.Printf("Error deleting participant: %v", err)
 		return errors.NewInfrastructureError("Failed to delete participant")
+	}
+
+	// Delete participant from cache
+	err = usecase.InMemoryParticipantRepository.Delete(id)
+	if err != nil {
+		log.Printf("Error deleting participant from cache: %v", err)
 	}
 
 	return nil

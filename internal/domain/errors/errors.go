@@ -2,6 +2,26 @@ package errors
 
 import "net/http"
 
+type NotFoundError struct {
+	Message    string
+	StatusCode int
+}
+
+func (e *NotFoundError) Error() string {
+	return e.Message
+}
+
+func NewNotFoundError(message string, statusCode ...int) error {
+	code := http.StatusNotFound
+	if len(statusCode) > 0 {
+		code = statusCode[0]
+	}
+	return &NotFoundError{
+		Message:    message,
+		StatusCode: code,
+	}
+}
+
 type BusinessError struct {
 	Message    string
 	StatusCode int
@@ -44,7 +64,7 @@ func NewInfrastructureError(message string, statusCode ...int) error {
 
 // Predefined errors
 var (
-	ErrorNotFound       = NewBusinessError("not found", http.StatusNotFound)
-	ErrorInfrastructure = NewInfrastructureError("infrastructure error")
-	ErrorInternal       = NewInfrastructureError("internal server error")
+	ErrorNotFound       = NewNotFoundError("not found", http.StatusNotFound)
+	ErrorInfrastructure = NewInfrastructureError("infrastructure error", http.StatusInternalServerError)
+	ErrorInternal       = NewInfrastructureError("internal server error", http.StatusInternalServerError)
 )

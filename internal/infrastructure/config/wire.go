@@ -30,8 +30,9 @@ func InitializeContainer() (*Container, error) {
 		InitDB,
 		InitRedis,
 		InitRabbitMQ,
-		redis.NewRedisRepository,
-		postgres.NewParticipantRepository,
+		redis.NewRedisParticipantRepository,
+		redis.NewRedisResultRepository,
+		postgres.NewPostgresParticipantRepository,
 		postgres.NewPostgresVoteRepository,
 		producer.NewRabbitMQProducer,
 		consumer.NewRabbitMQConsumer,
@@ -43,21 +44,23 @@ func InitializeContainer() (*Container, error) {
 		captcha.NewServeCaptchaUsecase,
 		captcha.NewValidateCaptchaUsecase,
 		captcha.NewValidateCaptchaTokenUsecase,
-		participants.NewCreateParticipantUsecase,
-		participants.NewGetParticipantsUsecase,
-		participants.NewGetParticipantUsecase,
-		participants.NewDeleteParticipantUsecase,
+		InitCreateParticipantUsecase,
+		InitGetParticipantUsecase,
+		InitGetParticipantsUsecase,
+		InitDeleteParticipantUsecase,
 		InitCastVoteUsecase,
 		votes.NewProcessVoteUsecase,
 		results.NewGetPartialResultsUsecase,
-		results.NewGetFinalResultsUseCase,
+		results.NewGetFinalResultsUsecase,
 		services.NewCaptchaService,
-		InitSyncCacheUsecase,
-		jobs.NewSyncCacheJob,
+		InitSyncParticipantsCacheUsecase,
+		InitSyncResultsCacheUsecase,
+		InitSyncCacheJob,
 		InitCron,
 		wire.Bind(new(domainProducer.MessageProducer), new(*producer.RabbitMQProducer)),
-		wire.Bind(new(domainRepositories.InMemoryRepository), new(*redis.RedisRepository)),
-		wire.Bind(new(domainRepositories.ParticipantRepository), new(*postgres.ParticipantRepository)),
+		wire.Bind(new(domainRepositories.InMemoryParticipantRepository), new(*redis.RedisParticipantRepository)),
+		wire.Bind(new(domainRepositories.InMemoryResultRepository), new(*redis.RedisResultRepository)),
+		wire.Bind(new(domainRepositories.ParticipantRepository), new(*postgres.PostgresParticipantRepository)),
 		wire.Bind(new(domainRepositories.VoteRepository), new(*postgres.PostgresVoteRepository)),
 		wire.Bind(new(domainServices.CaptchaService), new(*services.CaptchaService)),
 		wire.Struct(new(Container), "*"),
@@ -65,26 +68,61 @@ func InitializeContainer() (*Container, error) {
 	return &Container{}, nil
 }
 
-func InitCastVoteUsecase(
-	inMemoryRepository domainRepositories.InMemoryRepository,
-	domainProducer domainProducer.MessageProducer,
+func InitCreateParticipantUsecase(
 	participantRepository domainRepositories.ParticipantRepository,
+	inMemoryParticipantRepository domainRepositories.InMemoryParticipantRepository,
+) *participants.CreateParticipantUsecase {
+	return participants.NewCreateParticipantUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitGetParticipantUsecase(
+	participantRepository domainRepositories.ParticipantRepository,
+	inMemoryParticipantRepository domainRepositories.InMemoryParticipantRepository,
+) *participants.GetParticipantUsecase {
+	return participants.NewGetParticipantUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitGetParticipantsUsecase(
+	participantRepository domainRepositories.ParticipantRepository,
+	inMemoryParticipantRepository domainRepositories.InMemoryParticipantRepository,
+) *participants.GetParticipantsUsecase {
+	return participants.NewGetParticipantsUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitDeleteParticipantUsecase(
+	participantRepository domainRepositories.ParticipantRepository,
+	inMemoryParticipantRepository domainRepositories.InMemoryParticipantRepository,
+) *participants.DeleteParticipantUsecase {
+	return participants.NewDeleteParticipantUsecase(participantRepository, inMemoryParticipantRepository)
+}
+
+func InitCastVoteUsecase(
+	inMemoryParticipantRepository domainRepositories.InMemoryParticipantRepository,
+	inMemoryResultRepository domainRepositories.InMemoryResultRepository,
+	domainProducer domainProducer.MessageProducer,
 ) *votes.CastVoteUsecase {
 	voteQueue := os.Getenv("VOTE_QUEUE")
 
-	return votes.NewCastVoteUsecase(inMemoryRepository, domainProducer, participantRepository, voteQueue)
+	return votes.NewCastVoteUsecase(inMemoryParticipantRepository, inMemoryResultRepository, domainProducer, voteQueue)
 }
 
-func InitGetFinalResultsUsecase(
-	voteRepository domainRepositories.VoteRepository,
+func InitSyncCacheJob(
+	syncParticipantsCacheUsecase *cache.SyncParticipantsCacheUsecase,
+	syncResultsCacheUsecase *cache.SyncResultsCacheUsecase,
+) *jobs.SyncCacheJob {
+	return jobs.NewSyncCacheJob(syncResultsCacheUsecase, syncParticipantsCacheUsecase)
+}
+
+func InitSyncParticipantsCacheUsecase(
 	participantRepository domainRepositories.ParticipantRepository,
-) *results.GetFinalResultsUsecase {
-	return results.NewGetFinalResultsUseCase(voteRepository, participantRepository)
+	inMemoryParticipantRepository domainRepositories.InMemoryParticipantRepository,
+) *cache.SyncParticipantsCacheUsecase {
+	return cache.NewSyncParticipantsCacheUsecase(participantRepository, inMemoryParticipantRepository)
 }
 
-func InitSyncCacheUsecase(
+func InitSyncResultsCacheUsecase(
 	getFinalResultsUsecase *results.GetFinalResultsUsecase,
-	inMemoryRepository domainRepositories.InMemoryRepository,
-) *cache.SyncCacheUsecase {
-	return cache.NewSyncCacheUsecase(getFinalResultsUsecase, inMemoryRepository)
+	inMemoryResultRepository domainRepositories.InMemoryResultRepository,
+) *cache.SyncResultsCacheUsecase {
+	return cache.NewSyncResultsCacheUsecase(getFinalResultsUsecase, inMemoryResultRepository)
 }

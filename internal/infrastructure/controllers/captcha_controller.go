@@ -37,7 +37,7 @@ func NewCaptchaController(
 // @Tags captcha
 // @Accept  json
 // @Produce  json
-// @Success 200 {object} map[string]interface{} "captcha_id and captcha_image"
+// @Success 200 {object} map[string]interface{} "id and image_url"
 // @Router /v1/generate-captcha [get]
 func (captchaController *CaptchaController) GenerateCaptcha(context *gin.Context) {
 	captcha := captchaController.GenerateCaptchaUsecase.Execute()

@@ -98,7 +98,7 @@ const docTemplate = `{
                 "summary": "Generate CAPTCHA",
                 "responses": {
                     "200": {
-                        "description": "captcha_id and captcha_image",
+                        "description": "id and image_url",
                         "schema": {
                             "type": "object",
                             "additionalProperties": true

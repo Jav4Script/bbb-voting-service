@@ -3,26 +3,41 @@ package participants
 import (
 	"log"
 
-	entities "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/entities"
 	"bbb-voting-service/internal/domain/errors"
-	repositories "bbb-voting-service/internal/domain/repositories"
+	"bbb-voting-service/internal/domain/repositories"
 )
 
 type GetParticipantUsecase struct {
-	ParticipantRepository repositories.ParticipantRepository
+	InMemoryParticipantRepository repositories.InMemoryParticipantRepository
+	ParticipantRepository         repositories.ParticipantRepository
 }
 
-func NewGetParticipantUsecase(participantRepository repositories.ParticipantRepository) *GetParticipantUsecase {
+func NewGetParticipantUsecase(participantRepository repositories.ParticipantRepository, inMemoryParticipantRepository repositories.InMemoryParticipantRepository) *GetParticipantUsecase {
 	return &GetParticipantUsecase{
-		ParticipantRepository: participantRepository,
+		InMemoryParticipantRepository: inMemoryParticipantRepository,
+		ParticipantRepository:         participantRepository,
 	}
 }
 
 func (usecase *GetParticipantUsecase) Execute(id string) (entities.Participant, error) {
-	participant, err := usecase.ParticipantRepository.FindByID(id)
+	// Try to get participant from cache
+	participant, err := usecase.InMemoryParticipantRepository.FindByID(id)
+	if err == nil {
+		return participant, nil
+	}
+
+	// If not found in cache, get from database
+	participant, err = usecase.ParticipantRepository.FindByID(id)
 	if err != nil {
 		log.Printf("Error retrieving participant: %v", err)
 		return entities.Participant{}, errors.NewInfrastructureError("Failed to retrieve participant")
+	}
+
+	// Save participant to cache
+	err = usecase.InMemoryParticipantRepository.Save(participant)
+	if err != nil {
+		log.Printf("Error saving participant to cache: %v", err)
 	}
 
 	return participant, nil

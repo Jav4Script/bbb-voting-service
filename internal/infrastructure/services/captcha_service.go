@@ -30,7 +30,7 @@ func (captchaService *CaptchaService) GenerateCaptcha() entities.Captcha {
 	captchaID := captcha.New()
 	captchaURL := fmt.Sprintf("/captcha/%s", captchaID)
 
-	return entities.Captcha{ID: captchaID, Image: captchaURL}
+	return entities.Captcha{ID: captchaID, ImageUrl: captchaURL}
 }
 
 func (captchaService *CaptchaService) ServeCaptcha(w http.ResponseWriter, r *http.Request, captchaID string) {

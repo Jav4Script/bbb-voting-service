@@ -7,14 +7,12 @@ import (
 )
 
 type GetFinalResultsUsecase struct {
-	VoteRepository        repositories.VoteRepository
-	ParticipantRepository repositories.ParticipantRepository
+	VoteRepository repositories.VoteRepository
 }
 
-func NewGetFinalResultsUseCase(voteRepository repositories.VoteRepository, participantRepository repositories.ParticipantRepository) *GetFinalResultsUsecase {
+func NewGetFinalResultsUsecase(voteRepository repositories.VoteRepository) *GetFinalResultsUsecase {
 	return &GetFinalResultsUsecase{
-		VoteRepository:        voteRepository,
-		ParticipantRepository: participantRepository,
+		VoteRepository: voteRepository,
 	}
 }
 

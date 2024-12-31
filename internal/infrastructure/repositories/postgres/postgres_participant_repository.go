@@ -7,15 +7,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type ParticipantRepository struct {
+type PostgresParticipantRepository struct {
 	DB *gorm.DB
 }
 
-func NewParticipantRepository(database *gorm.DB) *ParticipantRepository {
-	return &ParticipantRepository{DB: database}
+func NewPostgresParticipantRepository(database *gorm.DB) *PostgresParticipantRepository {
+	return &PostgresParticipantRepository{DB: database}
 }
 
-func (repository *ParticipantRepository) Delete(participant entities.Participant) error {
+func (repository *PostgresParticipantRepository) Delete(participant entities.Participant) error {
 	participantModel := models.ToModelParticipant(participant)
 
 	err := repository.DB.Delete(&participantModel).Error
@@ -26,7 +26,7 @@ func (repository *ParticipantRepository) Delete(participant entities.Participant
 	return nil
 }
 
-func (repository *ParticipantRepository) FindAll() ([]entities.Participant, error) {
+func (repository *PostgresParticipantRepository) FindAll() ([]entities.Participant, error) {
 	var participantModels []models.ParticipantModel
 
 	err := repository.DB.Find(&participantModels).Error
@@ -42,7 +42,7 @@ func (repository *ParticipantRepository) FindAll() ([]entities.Participant, erro
 	return participants, nil
 }
 
-func (repository *ParticipantRepository) FindByID(id string) (entities.Participant, error) {
+func (repository *PostgresParticipantRepository) FindByID(id string) (entities.Participant, error) {
 	var participantModel models.ParticipantModel
 
 	err := repository.DB.First(&participantModel, "id = ?", id).Error
@@ -53,7 +53,7 @@ func (repository *ParticipantRepository) FindByID(id string) (entities.Participa
 	return models.ToDomainParticipant(participantModel), nil
 }
 
-func (repository *ParticipantRepository) FindByName(name string) (entities.Participant, error) {
+func (repository *PostgresParticipantRepository) FindByName(name string) (entities.Participant, error) {
 	var participantModel models.ParticipantModel
 
 	err := repository.DB.First(&participantModel, "name = ?", name).Error
@@ -64,7 +64,7 @@ func (repository *ParticipantRepository) FindByName(name string) (entities.Parti
 	return models.ToDomainParticipant(participantModel), nil
 }
 
-func (repository *ParticipantRepository) Save(participant entities.Participant) (entities.Participant, error) {
+func (repository *PostgresParticipantRepository) Save(participant entities.Participant) (entities.Participant, error) {
 	participantModel := models.ToModelParticipant(participant)
 
 	err := repository.DB.Create(&participantModel).Error

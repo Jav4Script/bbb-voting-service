@@ -7,21 +7,29 @@ import (
 )
 
 type SyncCacheJob struct {
-	SyncCacheUsecase *cache.SyncCacheUsecase
+	SyncCacheUsecase             *cache.SyncResultsCacheUsecase
+	SyncParticipantsCacheUsecase *cache.SyncParticipantsCacheUsecase
 }
 
-func NewSyncCacheJob(syncCacheUsecase *cache.SyncCacheUsecase) *SyncCacheJob {
+func NewSyncCacheJob(syncCacheUsecase *cache.SyncResultsCacheUsecase, syncParticipantsCacheUsecase *cache.SyncParticipantsCacheUsecase) *SyncCacheJob {
 	return &SyncCacheJob{
-		SyncCacheUsecase: syncCacheUsecase,
+		SyncCacheUsecase:             syncCacheUsecase,
+		SyncParticipantsCacheUsecase: syncParticipantsCacheUsecase,
 	}
 }
 
 func (job *SyncCacheJob) Run() {
 	err := job.SyncCacheUsecase.Execute()
-
 	if err != nil {
-		log.Printf("Error synchronizing cache: %v", err)
+		log.Printf("Error synchronizing results cache: %v", err)
 	} else {
-		log.Println("Cache synchronized successfully")
+		log.Println("Results cache synchronized successfully")
+	}
+
+	err = job.SyncParticipantsCacheUsecase.Execute()
+	if err != nil {
+		log.Printf("Error synchronizing participants cache: %v", err)
+	} else {
+		log.Println("Participants cache synchronized successfully")
 	}
 }

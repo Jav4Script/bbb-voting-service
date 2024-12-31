@@ -6,17 +6,17 @@ import (
 )
 
 type GetPartialResultsUsecase struct {
-	InMemoryRepository repositories.InMemoryRepository
+	InMemoryResultRepository repositories.InMemoryResultRepository
 }
 
-func NewGetPartialResultsUsecase(inMemoryRepository repositories.InMemoryRepository) *GetPartialResultsUsecase {
+func NewGetPartialResultsUsecase(inMemoryRepository repositories.InMemoryResultRepository) *GetPartialResultsUsecase {
 	return &GetPartialResultsUsecase{
-		InMemoryRepository: inMemoryRepository,
+		InMemoryResultRepository: inMemoryRepository,
 	}
 }
 
 func (usecase *GetPartialResultsUsecase) Execute() ([]domain.PartialResult, error) {
-	partialResults, err := usecase.InMemoryRepository.GetPartialResults()
+	partialResults, err := usecase.InMemoryResultRepository.GetPartialResults()
 	if err != nil {
 		return nil, err
 	}

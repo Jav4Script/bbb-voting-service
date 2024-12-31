@@ -12,39 +12,32 @@ import (
 )
 
 type CastVoteUsecase struct {
-	InMemoryRepository    repositories.InMemoryRepository
-	MessageProducer       producer.MessageProducer
-	ParticipantRepository repositories.ParticipantRepository
-	VoteQueue             string
+	InMemoryParticipantRepository repositories.InMemoryParticipantRepository
+	InMemoryResultRepository      repositories.InMemoryResultRepository
+	MessageProducer               producer.MessageProducer
+	VoteQueue                     string
 }
 
 func NewCastVoteUsecase(
-	inMemoryRepository repositories.InMemoryRepository,
+	inMemoryParticipantRepository repositories.InMemoryParticipantRepository,
+	inMemoryResultRepository repositories.InMemoryResultRepository,
 	messageProducer producer.MessageProducer,
-	participantRepository repositories.ParticipantRepository,
 	voteQueue string,
 ) *CastVoteUsecase {
 	return &CastVoteUsecase{
-		InMemoryRepository:    inMemoryRepository,
-		MessageProducer:       messageProducer,
-		ParticipantRepository: participantRepository,
-		VoteQueue:             voteQueue,
+		InMemoryParticipantRepository: inMemoryParticipantRepository,
+		InMemoryResultRepository:      inMemoryResultRepository,
+		MessageProducer:               messageProducer,
+		VoteQueue:                     voteQueue,
 	}
 }
 
 func (uscase *CastVoteUsecase) Execute(vote entities.Vote) error {
 	// Validate participant
-	participant, err := uscase.ParticipantRepository.FindByID(vote.ParticipantID)
+	participant, err := uscase.InMemoryParticipantRepository.FindByID(vote.ParticipantID)
 	if err != nil {
-		log.Printf("Error finding participant: %v", err)
+		log.Printf("Error finding participant in cache: %v", err)
 		return errors.NewBusinessError("Participant not found", http.StatusNotFound)
-	}
-
-	// Update the partial results in cache
-	err = uscase.InMemoryRepository.UpdatePartialResults(vote, participant)
-	if err != nil {
-		log.Printf("Error updating partial results: %v", err)
-		return errors.NewInfrastructureError("Failed to update partial results in cache")
 	}
 
 	// Publish vote to message queue
@@ -58,6 +51,13 @@ func (uscase *CastVoteUsecase) Execute(vote entities.Vote) error {
 	if err != nil {
 		log.Printf("Error publishing vote to message queue: %v", err)
 		return errors.NewInfrastructureError("Failed to publish vote to message queue")
+	}
+
+	// Update the partial results in cache
+	err = uscase.InMemoryResultRepository.UpdatePartialResults(vote, participant)
+	if err != nil {
+		log.Printf("Error updating partial results: %v", err)
+		return errors.NewInfrastructureError("Failed to update partial results in cache")
 	}
 
 	return nil

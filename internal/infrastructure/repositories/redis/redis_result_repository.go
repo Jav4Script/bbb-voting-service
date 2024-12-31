@@ -1,4 +1,4 @@
-package repositories
+package redis
 
 import (
 	"context"
@@ -14,17 +14,17 @@ import (
 	"github.com/go-redis/redis/v8"
 )
 
-type RedisRepository struct {
+type RedisResultRepository struct {
 	Client *redis.Client
 }
 
-func NewRedisRepository(client *redis.Client) *RedisRepository {
-	return &RedisRepository{Client: client}
+func NewRedisResultRepository(client *redis.Client) *RedisResultRepository {
+	return &RedisResultRepository{Client: client}
 }
 
-func (redisRepository *RedisRepository) GetPartialResults() ([]entities.PartialResult, error) {
+func (repository *RedisResultRepository) GetPartialResults() ([]entities.PartialResult, error) {
 	ctx := context.Background()
-	result, err := redisRepository.Client.Get(ctx, domain.PartialResultsKey).Result()
+	result, err := repository.Client.Get(ctx, domain.PartialResultsKey).Result()
 	if err == redis.Nil {
 		log.Printf("Partial results not found in Redis: %v", err)
 		return nil, errors.ErrorNotFound
@@ -43,36 +43,7 @@ func (redisRepository *RedisRepository) GetPartialResults() ([]entities.PartialR
 	return partialResults, nil
 }
 
-func (redisRepository *RedisRepository) UpdateCacheWithFinalResults(finalResults entities.FinalResults) error {
-	ctx := context.Background()
-
-	partialResults := make([]entities.PartialResult, 0, len(finalResults.ParticipantResults))
-	for _, participant := range finalResults.ParticipantResults {
-		partialResults = append(partialResults, entities.PartialResult{
-			ID:     participant.ID,
-			Name:   participant.Name,
-			Age:    participant.Age,
-			Gender: participant.Gender,
-			Votes:  participant.Votes,
-		})
-	}
-
-	partialResultsData, err := json.Marshal(partialResults)
-	if err != nil {
-		log.Printf("Error marshaling partial results data: %v", err)
-		return errors.NewInfrastructureError("Failed to marshal partial results data")
-	}
-
-	err = redisRepository.Client.Set(ctx, domain.PartialResultsKey, partialResultsData, 0).Err()
-	if err != nil {
-		log.Printf("Error saving partial results in Redis: %v", err)
-		return errors.NewInfrastructureError("Failed to save partial results in Redis")
-	}
-
-	return nil
-}
-
-func (redisRepository *RedisRepository) UpdatePartialResults(vote entities.Vote, participant entities.Participant) error {
+func (redisRepository *RedisResultRepository) UpdatePartialResults(vote entities.Vote, participant entities.Participant) error {
 	ctx := context.Background()
 
 	// Check if the vote already exists
@@ -128,6 +99,35 @@ func (redisRepository *RedisRepository) UpdatePartialResults(vote entities.Vote,
 	if err != nil {
 		log.Printf("Error adding vote ID to Redis set: %v", err)
 		return errors.NewInfrastructureError("Failed to add vote ID to Redis set")
+	}
+
+	return nil
+}
+
+func (redisRepository *RedisResultRepository) UpdateCacheWithFinalResults(finalResults entities.FinalResults) error {
+	ctx := context.Background()
+
+	partialResults := make([]entities.PartialResult, 0, len(finalResults.ParticipantResults))
+	for _, participant := range finalResults.ParticipantResults {
+		partialResults = append(partialResults, entities.PartialResult{
+			ID:     participant.ID,
+			Name:   participant.Name,
+			Age:    participant.Age,
+			Gender: participant.Gender,
+			Votes:  participant.Votes,
+		})
+	}
+
+	partialResultsData, err := json.Marshal(partialResults)
+	if err != nil {
+		log.Printf("Error marshaling partial results data: %v", err)
+		return errors.NewInfrastructureError("Failed to marshal partial results data")
+	}
+
+	err = redisRepository.Client.Set(ctx, domain.PartialResultsKey, partialResultsData, 0).Err()
+	if err != nil {
+		log.Printf("Error saving partial results in Redis: %v", err)
+		return errors.NewInfrastructureError("Failed to save partial results in Redis")
 	}
 
 	return nil

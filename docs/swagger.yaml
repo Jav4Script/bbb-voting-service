@@ -106,7 +106,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: captcha_id and captcha_image
+          description: id and image_url
           schema:
             additionalProperties: true
             type: object

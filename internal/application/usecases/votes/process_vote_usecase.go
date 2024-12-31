@@ -8,7 +8,6 @@ import (
 type ProcessVoteUsecase struct {
 	ParticipantRepository repositories.ParticipantRepository
 	VoteRepository        repositories.VoteRepository
-	InMemoryRepository    repositories.InMemoryRepository
 }
 
 func NewProcessVoteUsecase(
