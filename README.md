@@ -27,9 +27,20 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 - [Comandos Úteis](#comandos-úteis)
 - [Arquitetura](#arquitetura)
   - [Estrutura de Pastas](#estrutura-de-pastas)
-- [Dependências e Justificativas](#dependências-e-justificativas)
+  - [Endpoints](#endpoints)
+- [Dependências](#dependências)
 - [Variáveis de Ambiente](#variáveis-de-ambiente)
-- [Referências e Cheatsheets](#referências-e-cheatsheets)
+- [Testes de Carga](#testes-de-carga)
+  - [Endpoints Testados](#endpoints-testados)
+    - [Gerar CAPTCHA](#gerar-captcha)
+    - [Validar CAPTCHA](#validar-captcha)
+    - [Criar Participante](#criar-participante)
+    - [Votar](#votar)
+    - [Obter Resultados Parciais](#obter-resultados-parciais)
+    - [Obter Resultados Finais](#obter-resultados-finais)
+  - [Ferramenta Utilizada](#ferramenta-utilizada)
+  - [Importância dos Testes de Carga](#importância-dos-testes-de-carga)
+  - [Resultados dos Testes de Carga](#resultados-dos-testes-de-carga)
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
@@ -86,6 +97,7 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 | `make build-prod`  | Compila o projeto para produção    |
 | `make run-dev`     | Executa a aplicação para desenvolvimento |
 | `make run-prod`    | Executa a aplicação para produção  |
+| `make load-tests`  | Executa os testes de carga da aplicação     |
 | `make stop`        | Para todos os containers em execução |
 | `make clean`       | Remove arquivos temporários        |
 | `make clear-redis` | Limpa todos os dados do Redis      |
@@ -102,8 +114,6 @@ Este sistema foi projetado com os seguintes componentes:
 - Redis para armazenamento temporário de resultados.
 - RabbitMQ para gerenciamento de picos de tráfego.
 - PostgreSQL para persistência de dados históricos.
-
-<div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
 ![-](/docs/assets/rainbow-divider.png)
 
@@ -186,7 +196,7 @@ Este sistema foi projetado com os seguintes componentes:
 ├── makefile                    # Arquivo de automação de tarefas
 ├── README.md                   # Documentação do projeto
 └── scripts/
-    └── queue-init.sh           # Script de inicialização da fila
+    └── rabbitmq-init.sh           # Script de inicialização da fila
 ├── tmp/
 │   ├── build-errors.log        # Log de erros de build
 │   └── main                    # Binário principal gerado pelo build
@@ -196,18 +206,31 @@ Este sistema foi projetado com os seguintes componentes:
 
 ![-](/docs/assets/rainbow-divider.png)
 
+### Endpoints
+
+<img src="docs/assets/swagger.png" alt="BBB Voting Service Endpoints" />
+
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Dependências e Justificativas 
+## Dependências
 
-- Gin: Framework web para APIs REST em Go.
-- Redis: Armazenamento em memória para resultados parciais.
-- RabbitMQ: Gerenciamento de filas para lidar com picos de tráfego.
-- PostgreSQL: Persistência de dados históricos.
-- Swag: Geração de documentação Swagger.
-- Wire: Injeção de dependências.
+- [![Gin](https://img.shields.io/badge/gin-Framework%20web%20para%20APIs%20REST%20em%20Go-blue)](https://github.com/gin-gonic/gin)
+- [![Redis](https://img.shields.io/badge/redis-Armazenamento%20em%20memória%20para%20resultados%20parciais-red)](https://github.com/go-redis/redis)
+- [![RabbitMQ](https://img.shields.io/badge/rabbitmq-Gerenciamento%20de%20filas%20para%20lidar%20com%20picos%20de%20tráfego-orange)](https://github.com/streadway/amqp)
+- [![PostgreSQL](https://img.shields.io/badge/postgresql-Persistência%20de%20dados%20históricos-blue)](https://github.com/lib/pq)
+- [![Swag](https://img.shields.io/badge/swag-Geração%20de%20documentação%20Swagger-green)](https://github.com/swaggo/swag)
+- [![Wire](https://img.shields.io/badge/wire-Injeção%20de%20dependências-yellow)](https://github.com/google/wire)
+- [![Godotenv](https://img.shields.io/badge/godotenv-Carregamento%20de%20variáveis%20de%20ambiente%20a%20partir%20de%20arquivos%20.env-lightgrey)](https://github.com/joho/godotenv)
+- [![GORM](https://img.shields.io/badge/gorm-ORM%20para%20Go-blue)](https://gorm.io/gorm)
+- [![CORS](https://img.shields.io/badge/cors-Middleware%20para%20habilitar%20CORS-green)](https://github.com/gin-contrib/cors)
+- [![Cron](https://img.shields.io/badge/cron-Agendamento%20de%20tarefas-red)](https://github.com/robfig/cron)
+- [![UUID](https://img.shields.io/badge/uuid-Geração%20de%20UUIDs-blue)](https://github.com/google/uuid)
+- [![Captcha](https://img.shields.io/badge/captcha-Geração%20e%20validação%20de%20CAPTCHAs-lightgrey)](https://github.com/dchest/captcha)
+- [![Swagger Files](https://img.shields.io/badge/swagger%20files-Arquivos%20estáticos%20para%20Swagger-lightgrey)](https://github.com/swaggo/files)
+- [![Gin Swagger](https://img.shields.io/badge/gin%20swagger-Documentação%20Swagger%20para%20Gin-lightgrey)](https://github.com/swaggo/gin-swagger)
+- [![Validator](https://img.shields.io/badge/validator-Validação%20de%20estruturas%20em%20Go-lightgrey)](https://github.com/go-playground/validator)
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
@@ -218,38 +241,98 @@ Este sistema foi projetado com os seguintes componentes:
 Aqui estão as variáveis de ambiente necessárias para configurar o projeto. Substitua os placeholders pelos valores apropriados:
 
 ```plaintext
-APP_ENV=development                                  # Ambiente da aplicação (ex: development, test, production)
-DATABASE_NAME=your_database_name                     # Nome do banco de dados
-DATABASE_SCHEMA=your_schema                          # Esquema do banco de dados
-DATABASE_PORT=5432                                   # Porta do banco de dados
-DATABASE_HOST=your_database_host                     # Host do banco de dados
-DATABASE_USER=your_database_user                     # Usuário do banco de dados
-DATABASE_PASSWORD=your_password                      # Senha do banco de dados
-CORS_ALLOWED_ORIGINS=your_cors_allowed_origins       # Origens permitidas pelo cors
-RABBITMQ_USER=your_rabbitmq_user                     # Usuário do RabbitMQ
-RABBITMQ_PASSWORD=your_password                      # Senha do RabbitMQ
-RABBITMQ_HOST=your_rabbitmq_host                     # Host do RabbitMQ
-RABBITMQ_PORT=5672                                   # Porta do RabbitMQ
-RABBITMQ_VHOST=your_vhost                            # Virtual host do RabbitMQ
-VOTE_QUEUE=your_vote_queue                           # Nome da fila de votos
-REDIS_URL=your_redis_url                             # URL do Redis
-SYNC_CACHE_INTERVAL=your_sync_cache_interval_time    # Sync cache time in minutes
+# Environment
+APP_ENV=value                                # development, production, test
+APP_NAME=bbb-voting-app
+APP_PORT=8080
+
+# Database
+DATABASE_HOST=database                       # Database host
+DATABASE_PORT=5432                           # Database port
+DATABASE_NAME=bbb_voting                     # Database name
+DATABASE_SCHEMA=bbb_schema                   # Database schema
+DATABASE_USER=value                          # Database user
+DATABASE_PASSWORD=value                      # Database password
+
+# Network
+CORS_ALLOWED_ORIGINS=http://localhost:9000   # CORS allowed origins
+
+# RabbitMQ
+RABBITMQ_USER=value                          # RabbitMQ user
+RABBITMQ_PASSWORD=value                      # RabbitMQ password
+RABBITMQ_HOST=rabbitmq                       # RabbitMQ host
+RABBITMQ_PORT=5672                           # RabbitMQ port
+RABBITMQ_VHOST=/                             # RabbitMQ vhost
+VOTE_QUEUE=vote_queue                        # RabbitMQ vote queue
+
+# Redis
+REDIS_URL=redis://bbb-voting-redis:6379/0    # Redis URL
+SYNC_CACHE_INTERVAL=5                        # Sync cache time in minutes
 ```
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
 ![-](/docs/assets/rainbow-divider.png)
 
-## Referências e Cheatsheets 
+## Testes de Carga
 
-- [Docker Compose Cheatsheet](https://devhints.io/docker-compose)
-- [Gin Framework Documentation](https://gin-gonic.com/docs/)
-- [RabbitMQ Documentation](https://www.rabbitmq.com/documentation.html)
-- [Redis Documentation](https://redis.io/documentation)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Wire Documentation](https://github.com/google/wire)
-- [Gorm Documentation](https://github.com/go-gorm/gorm)
-  
+Os testes de carga são essenciais para garantir que o sistema possa lidar com um grande volume de requisições simultâneas, mantendo a performance e a estabilidade. No projeto BBB Voting System, implementamos testes de carga para os principais endpoints da API, utilizando a ferramenta k6.
+
+### Endpoints Testados
+
+#### Gerar CAPTCHA
+
+- **Endpoint:** `/v1/generate-captcha`
+- **Descrição:** Gera um novo CAPTCHA para validação.
+- **Importância:** Garantir que o sistema possa gerar CAPTCHAs rapidamente, mesmo sob alta carga, é crucial para a experiência do usuário e para a segurança do sistema.
+
+#### Validar CAPTCHA
+
+- **Endpoint:** `/v1/validate-captcha`
+- **Descrição:** Valida a solução do CAPTCHA fornecida pelo usuário.
+- **Importância:** A validação rápida e precisa dos CAPTCHAs é essencial para prevenir acessos automatizados e garantir que apenas usuários legítimos possam interagir com o sistema.
+
+#### Criar Participante
+
+- **Endpoint:** `/v1/participants`
+- **Descrição:** Cria um novo participante no sistema.
+- **Importância:** Testar a criação de participantes sob carga ajuda a garantir que o sistema possa lidar com um grande número de inscrições simultâneas.
+
+#### Votar
+
+- **Endpoint:** `/v1/votes`
+- **Descrição:** Registra um voto para um participante.
+- **Importância:** Este é um dos endpoints mais críticos, pois precisa suportar um alto volume de votos em um curto período de tempo, especialmente durante eventos ao vivo.
+
+#### Obter Resultados Parciais
+
+- **Endpoint:** `/v1/results/partial`
+- **Descrição:** Recupera os resultados parciais da votação.
+- **Importância:** Garantir que os resultados parciais possam ser acessados rapidamente é importante para manter os usuários informados sobre o andamento da votação.
+
+#### Obter Resultados Finais
+
+- **Endpoint:** `/v1/results/final`
+- **Descrição:** Recupera os resultados finais da votação.
+- **Importância:** Acesso rápido e preciso aos resultados finais é crucial para a transparência e confiança no sistema de votação.
+
+### Ferramenta Utilizada
+
+Para realizar os testes de carga, utilizamos a ferramenta k6, que é uma ferramenta moderna e de código aberto para testes de carga, escrita em Go. Ela permite a criação de scripts de teste em JavaScript, facilitando a automação e a integração com outros sistemas.
+
+### Importância dos Testes de Carga
+
+- **Identificação de Gargalos:** Ajuda a identificar pontos de falha e gargalos de performance no sistema.
+- **Garantia de Escalabilidade:** Assegura que o sistema pode escalar horizontalmente para lidar com aumentos de tráfego.
+- **Melhoria da Experiência do Usuário:** Garante que os usuários terão uma experiência fluida, mesmo durante picos de acesso.
+- **Prevenção de Falhas:** Ajuda a prevenir falhas catastróficas ao testar os limites do sistema em um ambiente controlado.
+
+### Resultados dos Testes de Carga
+
+Os testes de carga foram realizados com sucesso, e o sistema BBB Voting System demonstrou uma excelente capacidade de lidar com um grande volume de requisições simultâneas. Os resultados dos testes mostraram que o sistema é altamente escalável e confiável, mesmo sob condições extremas de tráfego.
+
+<img src="docs/assets/load-tests-results.png" alt="Load Test Results" />
+
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
 ![-](/docs/assets/rainbow-divider.png)

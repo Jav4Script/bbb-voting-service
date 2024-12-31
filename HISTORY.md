@@ -99,6 +99,7 @@ O projeto de votação de participantes do BBB foi desenvolvido com foco em alta
 
 ![-](/docs/assets/rainbow-divider.png)
 
+- **Docker**: Utilizado para facilitar a execução da aplicação em diferentes ambientes e garantir a consistência entre desenvolvimento, teste e produção.
 - **Golang**: Escolhido pela sua simplicidade, eficiência e suporte nativo à concorrência, essencial para lidar com um grande volume de requisições simultâneas.
 - **Gorm**: ORM para Go, utilizado para mapeamento objeto-relacional e interação com o banco de dados PostgreSQL.
 - **Redis**: Armazenamento em memória para resultados parciais, proporcionando acesso rápido e eficiente aos dados.
@@ -282,19 +283,18 @@ Para mais informações, consulte a [documentação oficial do Jaeger](https://w
 
 ![-](/docs/assets/rainbow-divider.png)
 
-<div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
-
-![-](/docs/assets/rainbow-divider.png)
-
-
 ## Trabalho em andamento
 
-- [ ] Implementação de testes de carga
 - [ ] Implementação de testes unitários
 - [ ] Modularização da aplicação, facilitando o desenvolvimento e manutenção. Dessa forma, também facilita a extração das funcionalidades para micro serviços independentes.
+- [ ] Desenho de arquitetura em alto nível, com diagramas de componentes, sequência e fluxo de dados.
 
 ## Necessário para produção
 
 - [ ] Implementação de CI/CD
 - [ ] Implementação de autenticação e autorização, garantindo a segurança e controle de acesso ao sistema.
 - [ ] Evolução do modelo de dados para atender regras de negócio mais complexas. Por exemplo, segmentar os votos por paredão, permitindo categorizar os votos por diferentes tipos de atributos.
+
+<div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
+
+![-](/docs/assets/rainbow-divider.png)
