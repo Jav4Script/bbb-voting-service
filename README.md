@@ -41,6 +41,11 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
   - [Ferramenta Utilizada](#ferramenta-utilizada)
   - [Importância dos Testes de Carga](#importância-dos-testes-de-carga)
   - [Resultados dos Testes de Carga](#resultados-dos-testes-de-carga)
+    - [Participant](#participant)
+    - [Captcha](#captcha)
+    - [Vote](#vote)
+    - [Results](#results)
+    - [All Endpoints](#all-endpoints)
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
@@ -89,18 +94,23 @@ Um sistema altamente escalável e confiável para gerenciamento de votações em
 
 ## Comandos Úteis 
 
-| Comando            | Descrição                          |
-|--------------------|------------------------------------|
-| `make swag`        | Gera a documentação Swagger        |
-| `make wire`        | Gera as dependências Wire          |
-| `make build-dev`   | Compila o projeto para desenvolvimento |
-| `make build-prod`  | Compila o projeto para produção    |
-| `make run-dev`     | Executa a aplicação para desenvolvimento |
-| `make run-prod`    | Executa a aplicação para produção  |
-| `make load-tests`  | Executa os testes de carga da aplicação     |
-| `make stop`        | Para todos os containers em execução |
-| `make clean`       | Remove arquivos temporários        |
-| `make clear-redis` | Limpa todos os dados do Redis      |
+| Comando                    | Descrição                                      |
+|----------------------------|------------------------------------------------|
+| `make swag`                | Gera a documentação Swagger                    |
+| `make wire`                | Gera as dependências Wire                      |
+| `make build-dev`           | Compila o projeto para desenvolvimento         |
+| `make build-prod`          | Compila o projeto para produção                |
+| `make run-dev`             | Executa a aplicação para desenvolvimento       |
+| `make run-prod`            | Executa a aplicação para produção              |
+| `make load-test`           | Executa todos os testes de carga               |
+| `make load-test-participant`| Executa os testes de carga relacionados a participantes |
+| `make load-test-captcha`   | Executa os testes de carga relacionados a CAPTCHA |
+| `make load-test-vote`      | Executa os testes de carga relacionados a votos |
+| `make load-test-results`   | Executa os testes de carga relacionados a resultados |
+| `make stop`                | Para todos os containers em execução           |
+| `make clean`               | Remove arquivos temporários e diretórios de documentação |
+| `make clear-redis`         | Limpa todos os dados do Redis                  |
+| `make clear-test-resources`| Limpa os recursos de teste (Database, Redis, RabbitMQ) |
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
@@ -331,7 +341,20 @@ Para realizar os testes de carga, utilizamos a ferramenta k6, que é uma ferrame
 
 Os testes de carga foram realizados com sucesso, e o sistema BBB Voting System demonstrou uma excelente capacidade de lidar com um grande volume de requisições simultâneas. Os resultados dos testes mostraram que o sistema é altamente escalável e confiável, mesmo sob condições extremas de tráfego.
 
-<img src="docs/assets/load-tests-results.png" alt="Load Test Results" />
+#### Participant
+<img src="docs/assets/load-test-participant.png" alt="Load Test Participant" />
+
+#### Captcha
+<img src="docs/assets/load-test-captcha.png" alt="Load Test Captcha" />
+
+#### Vote
+<img src="docs/assets/load-test-vote.png" alt="Load Test Vote" />
+
+#### Results
+<img src="docs/assets/load-test-results.png" alt="Load Test Results" />
+
+#### All Endpoints
+<img src="docs/assets/load-test-results.png" alt="Load Test Results" />
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 

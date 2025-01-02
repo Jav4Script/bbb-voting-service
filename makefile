@@ -1,4 +1,7 @@
-﻿.PHONY: swag wire build-dev build-prod run-dev run-prod stop clean
+﻿.PHONY: swag wire build-dev build-prod run-dev run-prod stop clean load-test clear-test-resources load-test-captcha load-test-participant load-test-vote load-test-results
+
+# Define the TEST_FILE variable
+TEST_FILE ?= load-test.js
 
 # Generate swagger docs
 swag:
@@ -24,13 +27,32 @@ run-dev: build-dev
 run-prod: swag wire
 	docker run -p 8080:8080 --env-file .env bbb-voting-service-prod
 
-# Run load tests
-load-tests: build-dev
+# Run all load tests (including clearing test resources)
+load-test: build-dev
+	TEST_FILE=load-test.js $(MAKE) run-load-test
+
+# Run only Participant-related load tests
+load-test-participant: build-dev
+	TEST_FILE=load-test-participant.js $(MAKE) run-load-test
+
+# Run only CAPTCHA-related load tests
+load-test-captcha: build-dev
+	TEST_FILE=load-test-captcha.js $(MAKE) run-load-test
+
+# Run only Vote-related load tests
+load-test-vote: build-dev
+	TEST_FILE=load-test-vote.js $(MAKE) run-load-test
+
+# Run only Results-related load tests
+load-test-results: build-dev
+	TEST_FILE=load-test-results.js $(MAKE) run-load-test
+
+# Helper target to run load tests
+run-load-test:
 	docker-compose -f docker-compose.test.yml up -d --force-recreate app-test test-database test-redis test-rabbitmq
 	docker-compose -f docker-compose.test.yml --profile load-test up --force-recreate k6
-	clear-test-resources
+	$(MAKE) clear-test-resources
 	docker-compose -f docker-compose.test.yml down
-
 
 # Stop all running containers
 stop:
@@ -41,12 +63,18 @@ clean:
 	rm -f main
 	rm -rf docs
 
-# Clear redis
+# Clear redis data
 clear-redis:
-	docker exec -it bbb-voting-redis redis-cli FLUSHALL
+	docker exec bbb-voting-redis redis-cli FLUSHALL
 
-# Clear test resources
+# Clear test resources (Database, Redis, RabbitMQ)
 clear-test-resources:
-	docker-compose -f docker-compose.test.yml exec -it test-database sh -c "chmod +x /scripts/database-cleanup.sh && /scripts/database-cleanup.sh"
-	docker-compose -f docker-compose.test.yml exec -it test-redis redis-cli FLUSHALL
-	docker-compose -f docker-compose.test.yml exec -it test-rabbitmq sh -c "chmod +x /scripts/rabbitmq-cleanup.sh && /scripts/rabbitmq-cleanup.sh"
+	@echo "Verify active containers..."
+	docker ps -a
+	@echo "Cleaning up test resources..."
+	@echo "Cleaning up test database..."
+	docker-compose -f docker-compose.test.yml exec test-database sh -c "chmod +x /scripts/database-cleanup.sh && /scripts/database-cleanup.sh"
+	@echo "Cleaning up test Redis..."
+	docker-compose -f docker-compose.test.yml exec test-redis redis-cli FLUSHALL
+	@echo "Cleaning up test RabbitMQ..."
+	docker-compose -f docker-compose.test.yml exec test-rabbitmq sh -c "chmod +x /scripts/rabbitmq-cleanup.sh && /scripts/rabbitmq-cleanup.sh"
