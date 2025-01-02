@@ -48,8 +48,7 @@ func (controller *ParticipantController) GetParticipants(context *gin.Context) {
 		return
 	}
 
-	participantMaps := mappers.ToParticipantMaps(participants)
-	context.JSON(http.StatusOK, participantMaps)
+	context.JSON(http.StatusOK, participants)
 }
 
 // GetParticipant godoc
@@ -70,8 +69,7 @@ func (controller *ParticipantController) GetParticipant(context *gin.Context) {
 		return
 	}
 
-	participantMap := mappers.ToParticipantMap(participant)
-	context.JSON(http.StatusOK, participantMap)
+	context.JSON(http.StatusOK, participant)
 }
 
 // CreateParticipant godoc
