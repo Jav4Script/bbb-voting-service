@@ -3,39 +3,39 @@ package repositories
 import (
 	"time"
 
-	entities "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/entities"
 	"bbb-voting-service/internal/infrastructure/mappers"
-	models "bbb-voting-service/internal/infrastructure/models"
+	"bbb-voting-service/internal/infrastructure/models"
 
 	"gorm.io/gorm"
 )
 
-type PostgresVoteRepository struct {
+type PostgresResultRepository struct {
 	DB *gorm.DB
 }
 
-func NewPostgresVoteRepository(database *gorm.DB) *PostgresVoteRepository {
-	return &PostgresVoteRepository{DB: database}
+func NewPostgresResultRepository(database *gorm.DB) *PostgresResultRepository {
+	return &PostgresResultRepository{DB: database}
 }
 
-func (repository *PostgresVoteRepository) Save(vote entities.Vote) error {
+func (repository *PostgresResultRepository) Save(vote entities.Vote) error {
 	voteModel := models.ToModelVote(vote)
 	return repository.DB.Create(&voteModel).Error
 }
 
-func (repository *PostgresVoteRepository) CountTotalVotes() (int, error) {
+func (repository *PostgresResultRepository) CountTotalVotes() (int, error) {
 	var count int64
 	err := repository.DB.Model(&models.VoteModel{}).Count(&count).Error
 	return int(count), err
 }
 
-func (repository *PostgresVoteRepository) CountVotesByParticipant(participantID string) (int, error) {
+func (repository *PostgresResultRepository) CountVotesByParticipant(participantID string) (int, error) {
 	var count int64
 	err := repository.DB.Model(&models.VoteModel{}).Where("participant_id = ?", participantID).Count(&count).Error
 	return int(count), err
 }
 
-func (repository *PostgresVoteRepository) CountVotesByHour() (map[time.Time]int, error) {
+func (repository *PostgresResultRepository) CountVotesByHour() (map[time.Time]int, error) {
 	var results []struct {
 		Hour  time.Time
 		Count int
@@ -57,7 +57,7 @@ func (repository *PostgresVoteRepository) CountVotesByHour() (map[time.Time]int,
 	return votesByHour, nil
 }
 
-func (repository *PostgresVoteRepository) GetParticipantResults() (map[string]entities.ParticipantResult, error) {
+func (repository *PostgresResultRepository) GetParticipantResults() (map[string]entities.ParticipantResult, error) {
 	var results []entities.ParticipantResult
 
 	err := repository.DB.Model(&models.VoteModel{}).
@@ -78,7 +78,7 @@ func (repository *PostgresVoteRepository) GetParticipantResults() (map[string]en
 	return finalResults, nil
 }
 
-func (repository *PostgresVoteRepository) GetFinalResults() (entities.FinalResults, error) {
+func (repository *PostgresResultRepository) GetFinalResults() (entities.FinalResults, error) {
 	// Get total votes
 	totalVotes, err := repository.CountTotalVotes()
 	if err != nil {

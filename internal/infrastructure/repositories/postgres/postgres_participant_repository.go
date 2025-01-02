@@ -3,6 +3,7 @@ package repositories
 import (
 	entities "bbb-voting-service/internal/domain/entities"
 	models "bbb-voting-service/internal/infrastructure/models"
+	"fmt"
 
 	"gorm.io/gorm"
 )
@@ -20,7 +21,7 @@ func (repository *PostgresParticipantRepository) Delete(participant entities.Par
 
 	err := repository.DB.Delete(&participantModel).Error
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete participant: %w", err)
 	}
 
 	return nil
@@ -29,9 +30,10 @@ func (repository *PostgresParticipantRepository) Delete(participant entities.Par
 func (repository *PostgresParticipantRepository) FindAll() ([]entities.Participant, error) {
 	var participantModels []models.ParticipantModel
 
-	err := repository.DB.Find(&participantModels).Error
+	err := repository.DB.Select("id", "name", "age", "gender").
+		Find(&participantModels).Error
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch participants: %w", err)
 	}
 
 	participants := make([]entities.Participant, len(participantModels))
@@ -47,7 +49,10 @@ func (repository *PostgresParticipantRepository) FindByID(id string) (entities.P
 
 	err := repository.DB.First(&participantModel, "id = ?", id).Error
 	if err != nil {
-		return entities.Participant{}, err
+		if err == gorm.ErrRecordNotFound {
+			return entities.Participant{}, fmt.Errorf("participant not found: %w", err)
+		}
+		return entities.Participant{}, fmt.Errorf("failed to fetch participant by ID: %w", err)
 	}
 
 	return models.ToDomainParticipant(participantModel), nil
@@ -58,7 +63,10 @@ func (repository *PostgresParticipantRepository) FindByName(name string) (entiti
 
 	err := repository.DB.First(&participantModel, "name = ?", name).Error
 	if err != nil {
-		return entities.Participant{}, err
+		if err == gorm.ErrRecordNotFound {
+			return entities.Participant{}, fmt.Errorf("participant with name '%s' not found: %w", name, err)
+		}
+		return entities.Participant{}, fmt.Errorf("failed to fetch participant by name: %w", err)
 	}
 
 	return models.ToDomainParticipant(participantModel), nil
@@ -69,7 +77,7 @@ func (repository *PostgresParticipantRepository) Save(participant entities.Parti
 
 	err := repository.DB.Create(&participantModel).Error
 	if err != nil {
-		return entities.Participant{}, err
+		return entities.Participant{}, fmt.Errorf("failed to save participant: %w", err)
 	}
 
 	participantEntity := models.ToDomainParticipant(participantModel)

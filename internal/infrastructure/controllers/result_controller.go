@@ -31,7 +31,7 @@ func NewResultController(partialResultsUseCase *results.GetPartialResultsUsecase
 // @Failure 404 {object} map[string]string
 // @Router /v1/results/partial [get]
 func (controller *ResultController) GetPartialResults(context *gin.Context) {
-	results, err := controller.GetPartialResultsUsecase.Execute()
+	results, err := controller.GetPartialResultsUsecase.Execute(context)
 	if err != nil {
 		log.Printf("Error retrieving partial results: %v", err)
 		context.JSON(http.StatusNotFound, gin.H{"error": "Partial results not found"})
@@ -50,7 +50,7 @@ func (controller *ResultController) GetPartialResults(context *gin.Context) {
 // @Success 200 {object} map[string]interface{}
 // @Router /v1/results/final [get]
 func (controller *ResultController) GetFinalResults(context *gin.Context) {
-	results, err := controller.GetFinalResultsUsecase.Execute()
+	results, err := controller.GetFinalResultsUsecase.Execute(context)
 	if err != nil {
 		log.Printf("Error retrieving final results: %v", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get final results"})

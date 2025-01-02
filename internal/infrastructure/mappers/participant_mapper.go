@@ -13,21 +13,12 @@ func FromCreateParticipantDTO(createParticipantDTO dtos.CreateParticipantDTO) en
 	}
 }
 
-func ToParticipantMap(participant entities.Participant) map[string]interface{} {
-	return map[string]interface{}{
-		"id":         participant.ID,
-		"name":       participant.Name,
-		"age":        participant.Age,
-		"gender":     participant.Gender,
-		"created_at": participant.CreatedAt,
-		"updated_at": participant.UpdatedAt,
+func FromParticipantResult(participantResult entities.ParticipantResult) entities.Participant {
+	return entities.Participant{
+		ID:        participantResult.ID,
+		Name:      participantResult.Name,
+		Age:       participantResult.Age,
+		CreatedAt: participantResult.CreatedAt,
+		UpdatedAt: participantResult.UpdatedAt,
 	}
-}
-
-func ToParticipantMaps(participants []entities.Participant) []map[string]interface{} {
-	participantMaps := make([]map[string]interface{}, len(participants))
-	for i, participant := range participants {
-		participantMaps[i] = ToParticipantMap(participant)
-	}
-	return participantMaps
 }

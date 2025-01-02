@@ -24,7 +24,7 @@ type Container struct {
 	RedisClient                   *redis.Client
 	RabbitMQChannel               *amqp.Channel
 	ParticipantRepository         *postgres.PostgresParticipantRepository
-	VoteRepository                *postgres.PostgresVoteRepository
+	ResultRepository              *postgres.PostgresResultRepository
 	InMemoryParticipantRepository *redisRepository.RedisParticipantRepository
 	InMemoryResultRepository      *redisRepository.RedisResultRepository
 	RabbitMQProducer              *producer.RabbitMQProducer

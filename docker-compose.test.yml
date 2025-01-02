@@ -46,6 +46,11 @@ services:
       POSTGRES_USER: ${DATABASE_USER}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
       POSTGRES_DB: bbb_voting_test
+      POSTGRES_MAX_CONNECTIONS: 1000
+      POSTGRES_SHARED_BUFFERS: 256MB
+      POSTGRES_WORK_MEM: 16MB
+      POSTGRES_MAINTENANCE_WORK_MEM: 128MB
+      POSTGRES_EFFECTIVE_CACHE_SIZE: 1GB
     env_file:
       - .env
     ports:
@@ -59,6 +64,18 @@ services:
       timeout: 5s
       retries: 5
     restart: always
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=1000"
+      - "-c"
+      - "shared_buffers=512MB"
+      - "-c"
+      - "work_mem=32MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "effective_cache_size=1GB"
 
   test-redis:
     image: redis:7
@@ -70,7 +87,7 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    command: ["redis-server", "--maxclients", "20000"]
+    command: ["redis-server", "--maxclients", "20000", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
     restart: always
 
   test-rabbitmq:
@@ -97,8 +114,8 @@ services:
     image: loadimpact/k6
     container_name: k6-load-tester
     volumes:
-      - ./load-tests:/scripts
-    entrypoint: ["k6", "run", "/scripts/load-tests.js"]
+      - ./load-test:/scripts
+    entrypoint: ["sh", "-c", "k6 run /scripts/${TEST_FILE}"]
     depends_on:
       - app-test
       - test-database
@@ -107,6 +124,7 @@ services:
     environment:
       APP_NAME: bbb-voting-app-test
       APP_PORT: 8081
+      TEST_FILE: ${TEST_FILE}
     env_file:
       - .env
 

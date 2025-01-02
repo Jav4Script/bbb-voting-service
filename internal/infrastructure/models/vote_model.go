@@ -10,13 +10,13 @@ import (
 
 type VoteModel struct {
 	ID            uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	ParticipantID uuid.UUID `gorm:"type:uuid;not null"`
+	ParticipantID uuid.UUID `gorm:"type:uuid;not null;index"`
 	VoterID       string    `gorm:"not null"`
 	IPAddress     string    `gorm:"not null"`
 	UserAgent     string    `gorm:"not null"`
 	Region        string    `gorm:"not null"`
 	Device        string    `gorm:"not null"`
-	CreatedAt     time.Time `gorm:"autoCreateTime"`
+	CreatedAt     time.Time `gorm:"autoCreateTime;index"`
 	UpdatedAt     time.Time `gorm:"autoUpdateTime"`
 }
 

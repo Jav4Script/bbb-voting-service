@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"context"
 	"log"
 
 	"bbb-voting-service/internal/application/usecases/results"
@@ -19,14 +20,16 @@ func NewSyncResultsCacheUsecase(getFinalResultsUsecase *results.GetFinalResultsU
 	}
 }
 
-func (usecase *SyncResultsCacheUsecase) Execute() error {
-	finalResults, err := usecase.GetFinalResultsUsecase.Execute()
+func (usecase *SyncResultsCacheUsecase) Execute(context context.Context) error {
+	// Fetch final results using the provided use case
+	finalResults, err := usecase.GetFinalResultsUsecase.Execute(context)
 	if err != nil {
 		log.Printf("Error getting final results: %v", err)
 		return err
 	}
 
-	err = usecase.InMemoryResultRepository.UpdateCacheWithFinalResults(finalResults)
+	// Update the cache with the final results
+	err = usecase.InMemoryResultRepository.UpdateCacheWithFinalResults(context, finalResults)
 	if err != nil {
 		log.Printf("Error updating cache with final results: %v", err)
 		return err

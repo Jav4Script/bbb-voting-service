@@ -18,13 +18,3 @@ func FromCastVoteDTO(castVoteDTO dtos.CastVoteDTO) entities.Vote {
 		Device:        castVoteDTO.Device,
 	}
 }
-
-func ToPartialResult(participant entities.Participant) entities.PartialResult {
-	return entities.PartialResult{
-		ID:     participant.ID,
-		Name:   participant.Name,
-		Age:    participant.Age,
-		Gender: participant.Gender,
-		Votes:  1,
-	}
-}

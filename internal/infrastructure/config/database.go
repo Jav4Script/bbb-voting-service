@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"bbb-voting-service/internal/infrastructure/models"
 
@@ -32,13 +33,21 @@ func InitDB() *gorm.DB {
 	}
 
 	// Construct the database URL with the schema after creating the database and schema
-	databaseURLWithSchema := fmt.Sprintf("%s/%s?search_path=%s&sslmode=disable", databaseURL, databaseName, databaseSchema)
+	databaseURLWithSchema := fmt.Sprintf("%s/%s?search_path=%s&sslmode=disable&connect_timeout=60", databaseURL, databaseName, databaseSchema)
 	db, err := gorm.Open(postgres.Open(databaseURLWithSchema), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			TablePrefix: fmt.Sprintf("%s.", databaseSchema),
 		},
+		PrepareStmt: true,
 	})
 	checkError("Failed to connect to the database", err)
+
+	// Configure connection pool
+	sqlDB, err := db.DB()
+	checkError("Failed to get database instance", err)
+	sqlDB.SetMaxIdleConns(50)
+	sqlDB.SetMaxOpenConns(500)
+	sqlDB.SetConnMaxLifetime(15 * time.Minute)
 
 	err = db.AutoMigrate(&models.VoteModel{}, &models.ParticipantModel{})
 	checkError("Failed to migrate the database schema", err)

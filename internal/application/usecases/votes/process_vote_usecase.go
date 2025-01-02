@@ -7,15 +7,15 @@ import (
 
 type ProcessVoteUsecase struct {
 	ParticipantRepository repositories.ParticipantRepository
-	VoteRepository        repositories.VoteRepository
+	ResultRepository      repositories.ResultRepository
 }
 
 func NewProcessVoteUsecase(
-	voteRepository repositories.VoteRepository,
+	resultRepository repositories.ResultRepository,
 	participantRepository repositories.ParticipantRepository,
 ) *ProcessVoteUsecase {
 	return &ProcessVoteUsecase{
-		VoteRepository:        voteRepository,
+		ResultRepository:      resultRepository,
 		ParticipantRepository: participantRepository,
 	}
 }
@@ -28,7 +28,7 @@ func (usecase *ProcessVoteUsecase) Execute(vote entities.Vote) error {
 	}
 
 	// Persist vote in the database
-	err = usecase.VoteRepository.Save(vote)
+	err = usecase.ResultRepository.Save(vote)
 	if err != nil {
 		return err
 	}

@@ -41,7 +41,7 @@ func NewParticipantController(
 // @Success 200 {object} []map[string]interface{}
 // @Router /v1/participants [get]
 func (controller *ParticipantController) GetParticipants(context *gin.Context) {
-	participants, err := controller.GetParticipantsUsecase.Execute()
+	participants, err := controller.GetParticipantsUsecase.Execute(context)
 	if err != nil {
 		log.Printf("Error retrieving participants: %v", err)
 		context.Error(err)
@@ -62,7 +62,7 @@ func (controller *ParticipantController) GetParticipants(context *gin.Context) {
 // @Router /v1/participants/{id} [get]
 func (controller *ParticipantController) GetParticipant(context *gin.Context) {
 	id := context.Param("id")
-	participant, err := controller.GetParticipantUsecase.Execute(id)
+	participant, err := controller.GetParticipantUsecase.Execute(context, id)
 	if err != nil {
 		log.Printf("Error retrieving participant: %v", err)
 		context.Error(err)
@@ -91,7 +91,7 @@ func (controller *ParticipantController) CreateParticipant(context *gin.Context)
 
 	participantEntity := mappers.FromCreateParticipantDTO(dto)
 
-	participant, err := controller.CreateParticipantUsecase.Execute(participantEntity)
+	participant, err := controller.CreateParticipantUsecase.Execute(context, participantEntity)
 	if err != nil {
 		log.Printf("Error creating participant: %v", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create participant"})
@@ -112,7 +112,7 @@ func (controller *ParticipantController) CreateParticipant(context *gin.Context)
 // @Router /v1/participants/{id} [delete]
 func (controller *ParticipantController) DeleteParticipant(context *gin.Context) {
 	id := context.Param("id")
-	err := controller.DeleteParticipantUsecase.Execute(id)
+	err := controller.DeleteParticipantUsecase.Execute(context, id)
 	if err != nil {
 		log.Printf("Error deleting participant: %v", err)
 		context.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete participant"})

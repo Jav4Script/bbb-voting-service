@@ -1,9 +1,12 @@
 package repositories
 
-import domain "bbb-voting-service/internal/domain/entities"
+import (
+	domain "bbb-voting-service/internal/domain/entities"
+	"context"
+)
 
 type InMemoryResultRepository interface {
-	GetPartialResults() ([]domain.PartialResult, error)
-	UpdatePartialResults(vote domain.Vote, participant domain.Participant) error
-	UpdateCacheWithFinalResults(finalResults domain.FinalResults) error
+	GetPartialResults(ctx context.Context) ([]domain.PartialResult, error)
+	UpdatePartialResults(ctx context.Context, vote domain.Vote, participant domain.Participant) error
+	UpdateCacheWithFinalResults(ctx context.Context, finalResults domain.FinalResults) error
 }

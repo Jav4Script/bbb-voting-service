@@ -1,24 +1,29 @@
 package results
 
 import (
+	"context"
+	"log"
+
 	"bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/errors"
 	"bbb-voting-service/internal/domain/repositories"
 )
 
 type GetFinalResultsUsecase struct {
-	VoteRepository repositories.VoteRepository
+	ResultRepository repositories.ResultRepository
 }
 
-func NewGetFinalResultsUsecase(voteRepository repositories.VoteRepository) *GetFinalResultsUsecase {
+func NewGetFinalResultsUsecase(resultRepository repositories.ResultRepository) *GetFinalResultsUsecase {
 	return &GetFinalResultsUsecase{
-		VoteRepository: voteRepository,
+		ResultRepository: resultRepository,
 	}
 }
 
-func (usecase *GetFinalResultsUsecase) Execute() (entities.FinalResults, error) {
-	finalResults, err := usecase.VoteRepository.GetFinalResults()
+func (usecase *GetFinalResultsUsecase) Execute(ctx context.Context) (entities.FinalResults, error) {
+	finalResults, err := usecase.ResultRepository.GetFinalResults()
 	if err != nil {
-		return entities.FinalResults{}, err
+		log.Printf("Error retrieving final results: %v", err)
+		return entities.FinalResults{}, errors.NewInfrastructureError("Failed to retrieve final results")
 	}
 
 	return finalResults, nil

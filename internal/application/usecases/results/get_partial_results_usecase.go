@@ -1,8 +1,12 @@
 package results
 
 import (
-	domain "bbb-voting-service/internal/domain/entities"
-	repositories "bbb-voting-service/internal/domain/repositories"
+	"context"
+	"log"
+
+	"bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/errors"
+	"bbb-voting-service/internal/domain/repositories"
 )
 
 type GetPartialResultsUsecase struct {
@@ -15,10 +19,12 @@ func NewGetPartialResultsUsecase(inMemoryRepository repositories.InMemoryResultR
 	}
 }
 
-func (usecase *GetPartialResultsUsecase) Execute() ([]domain.PartialResult, error) {
-	partialResults, err := usecase.InMemoryResultRepository.GetPartialResults()
+func (usecase *GetPartialResultsUsecase) Execute(context context.Context) ([]entities.PartialResult, error) {
+	// Call the repository's GetPartialResults method, passing the context
+	partialResults, err := usecase.InMemoryResultRepository.GetPartialResults(context)
 	if err != nil {
-		return nil, err
+		log.Printf("Error retrieving partial results: %v", err)
+		return nil, errors.NewInfrastructureError("Failed to retrieve partial results")
 	}
 
 	return partialResults, nil

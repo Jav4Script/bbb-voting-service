@@ -6,7 +6,7 @@ import (
 	"bbb-voting-service/internal/domain/entities"
 )
 
-type VoteRepository interface {
+type ResultRepository interface {
 	Save(vote entities.Vote) error
 	CountTotalVotes() (int, error)
 	CountVotesByParticipant(participantID string) (int, error)

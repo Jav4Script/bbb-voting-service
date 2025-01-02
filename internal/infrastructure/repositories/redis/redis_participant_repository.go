@@ -3,13 +3,12 @@ package redis
 import (
 	"context"
 	"log"
-	"time"
 
-	entities "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/entities"
 	"bbb-voting-service/internal/domain/errors"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/vmihailenco/msgpack/v5" // Library for efficient serialization
+	"github.com/vmihailenco/msgpack/v5"
 )
 
 type RedisParticipantRepository struct {
@@ -20,113 +19,77 @@ func NewRedisParticipantRepository(client *redis.Client) *RedisParticipantReposi
 	return &RedisParticipantRepository{Client: client}
 }
 
-func (repository *RedisParticipantRepository) Save(participant entities.Participant) error {
-	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Serialize participant using MessagePack
+// Save stores or updates a participant in Redis.
+func (repository *RedisParticipantRepository) Save(context context.Context, participant entities.Participant) error {
+	// Serialize the participant using msgpack
 	participantData, err := msgpack.Marshal(participant)
 	if err != nil {
-		log.Printf("Error marshaling participant data: %v", err)
+		log.Printf("Error marshaling participant %s: %v", participant.ID, err)
 		return errors.NewInfrastructureError("Failed to marshal participant data")
 	}
 
-	// Save participant to Redis with a TTL of 24 hours
-	const participantTTL = 24 * time.Hour
-	err = repository.Client.Set(ctx, "participant:"+participant.ID, participantData, participantTTL).Err()
+	// Save the serialized data into the Redis hash
+	err = repository.Client.HSet(context, "participants", participant.ID, participantData).Err()
 	if err != nil {
-		log.Printf("Error saving participant in Redis: %v", err)
-		return errors.NewInfrastructureError("Failed to save participant in Redis")
+		log.Printf("Error saving participant %s to Redis: %v", participant.ID, err)
+		return errors.NewInfrastructureError("Failed to save participant to Redis")
 	}
 
 	return nil
 }
 
-func (repository *RedisParticipantRepository) FindAll() ([]entities.Participant, error) {
-	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+// FindAll retrieves all participants from Redis.
+func (repository *RedisParticipantRepository) FindAll(context context.Context) ([]entities.Participant, error) {
+	// Get all participants from the Redis hash
+	participantsData, err := repository.Client.HGetAll(context, "participants").Result()
+	if err != nil {
+		log.Printf("Error retrieving all participants from Redis: %v", err)
+		return nil, errors.NewInfrastructureError("Failed to retrieve participants from Redis")
+	}
 
-	var cursor uint64
 	var participants []entities.Participant
-
-	for {
-		// Use SCAN to fetch keys incrementally
-		keys, newCursor, err := repository.Client.Scan(ctx, cursor, "participant:*", 100).Result()
+	for _, data := range participantsData {
+		var participant entities.Participant
+		err := msgpack.Unmarshal([]byte(data), &participant)
 		if err != nil {
-			log.Printf("Error scanning participant keys from Redis: %v", err)
-			return nil, errors.NewInfrastructureError("Failed to scan participant keys from Redis")
+			log.Printf("Error deserializing participant data: %v", err)
+			continue // Skip invalid entries
 		}
-
-		if len(keys) > 0 {
-			// Use MGET to fetch multiple keys in one call
-			participantDataList, err := repository.Client.MGet(ctx, keys...).Result()
-			if err != nil {
-				log.Printf("Error getting participants from Redis: %v", err)
-				return nil, errors.NewInfrastructureError("Failed to get participants from Redis")
-			}
-
-			// Deserialize data returned by MGET
-			for _, data := range participantDataList {
-				if data == nil {
-					continue // Skip nonexistent keys
-				}
-
-				var participant entities.Participant
-				err = msgpack.Unmarshal([]byte(data.(string)), &participant)
-				if err != nil {
-					log.Printf("Error unmarshaling participant data: %v", err)
-					return nil, errors.NewInfrastructureError("Failed to unmarshal participant data")
-				}
-				participants = append(participants, participant)
-			}
-		}
-
-		// Update the cursor
-		cursor = newCursor
-		if cursor == 0 { // SCAN completed
-			break
-		}
+		participants = append(participants, participant)
 	}
 
 	return participants, nil
 }
 
-func (repository *RedisParticipantRepository) FindByID(id string) (entities.Participant, error) {
-	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Fetch participant by ID
-	participantData, err := repository.Client.Get(ctx, "participant:"+id).Result()
+// FindByID retrieves a participant by ID from Redis.
+func (repository *RedisParticipantRepository) FindByID(context context.Context, id string) (entities.Participant, error) {
+	// Fetch the participant data from Redis
+	data, err := repository.Client.HGet(context, "participants", id).Result()
 	if err == redis.Nil {
 		return entities.Participant{}, errors.NewNotFoundError("Participant not found")
-	} else if err != nil {
-		log.Printf("Error getting participant from Redis: %v", err)
-		return entities.Participant{}, errors.NewInfrastructureError("Failed to get participant from Redis")
+	}
+	if err != nil {
+		log.Printf("Error retrieving participant %s from Redis: %v", id, err)
+		return entities.Participant{}, errors.NewInfrastructureError("Failed to retrieve participant")
 	}
 
-	// Deserialize the participant
+	// Deserialize the participant data
 	var participant entities.Participant
-	err = msgpack.Unmarshal([]byte(participantData), &participant)
+	err = msgpack.Unmarshal([]byte(data), &participant)
 	if err != nil {
-		log.Printf("Error unmarshaling participant data: %v", err)
-		return entities.Participant{}, errors.NewInfrastructureError("Failed to unmarshal participant data")
+		log.Printf("Error deserializing participant %s data: %v", id, err)
+		return entities.Participant{}, errors.NewInfrastructureError("Failed to deserialize participant data")
 	}
 
 	return participant, nil
 }
 
-func (repository *RedisParticipantRepository) Delete(id string) error {
-	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	// Delete participant from Redis
-	err := repository.Client.Del(ctx, "participant:"+id).Err()
+// Delete removes a participant by ID from Redis.
+func (repository *RedisParticipantRepository) Delete(context context.Context, id string) error {
+	// Remove the participant from the Redis hash
+	err := repository.Client.HDel(context, "participants", id).Err()
 	if err != nil {
-		log.Printf("Error deleting participant from Redis: %v", err)
+		log.Printf("Error deleting participant %s from Redis: %v", id, err)
 		return errors.NewInfrastructureError("Failed to delete participant from Redis")
 	}
 

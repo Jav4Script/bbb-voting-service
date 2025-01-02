@@ -9,8 +9,8 @@ import (
 )
 
 type ParticipantModel struct {
-	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-	Name      string    `gorm:"not null"`
+	ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey;index"`
+	Name      string    `gorm:"not null;index"`
 	Age       int       `gorm:"not null"`
 	Gender    string    `gorm:"not null"`
 	CreatedAt time.Time `gorm:"autoCreateTime"`

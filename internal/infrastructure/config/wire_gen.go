@@ -35,14 +35,14 @@ func InitializeContainer() (*Container, error) {
 	client := InitRedis()
 	channel := InitRabbitMQ()
 	postgresParticipantRepository := repositories.NewPostgresParticipantRepository(db)
-	postgresVoteRepository := repositories.NewPostgresVoteRepository(db)
+	postgresResultRepository := repositories.NewPostgresResultRepository(db)
 	redisParticipantRepository := redis.NewRedisParticipantRepository(client)
 	redisResultRepository := redis.NewRedisResultRepository(client)
 	rabbitMQProducer := producer.NewRabbitMQProducer(channel)
-	processVoteUsecase := votes.NewProcessVoteUsecase(postgresVoteRepository, postgresParticipantRepository)
+	processVoteUsecase := votes.NewProcessVoteUsecase(postgresResultRepository, postgresParticipantRepository)
 	rabbitMQConsumer := consumer.NewRabbitMQConsumer(channel, processVoteUsecase)
 	syncParticipantsCacheUsecase := InitSyncParticipantsCacheUsecase(postgresParticipantRepository, redisParticipantRepository)
-	getFinalResultsUsecase := results.NewGetFinalResultsUsecase(postgresVoteRepository)
+	getFinalResultsUsecase := results.NewGetFinalResultsUsecase(postgresResultRepository)
 	syncResultsCacheUsecase := InitSyncResultsCacheUsecase(getFinalResultsUsecase, redisResultRepository)
 	syncCacheJob := InitSyncCacheJob(syncParticipantsCacheUsecase, syncResultsCacheUsecase)
 	cron := InitCron(syncCacheJob)
@@ -66,7 +66,7 @@ func InitializeContainer() (*Container, error) {
 		RedisClient:                   client,
 		RabbitMQChannel:               channel,
 		ParticipantRepository:         postgresParticipantRepository,
-		VoteRepository:                postgresVoteRepository,
+		ResultRepository:              postgresResultRepository,
 		InMemoryParticipantRepository: redisParticipantRepository,
 		InMemoryResultRepository:      redisResultRepository,
 		RabbitMQProducer:              rabbitMQProducer,

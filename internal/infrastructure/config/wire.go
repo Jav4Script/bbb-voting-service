@@ -33,7 +33,7 @@ func InitializeContainer() (*Container, error) {
 		redis.NewRedisParticipantRepository,
 		redis.NewRedisResultRepository,
 		postgres.NewPostgresParticipantRepository,
-		postgres.NewPostgresVoteRepository,
+		postgres.NewPostgresResultRepository,
 		producer.NewRabbitMQProducer,
 		consumer.NewRabbitMQConsumer,
 		controllers.NewCaptchaController,
@@ -61,7 +61,7 @@ func InitializeContainer() (*Container, error) {
 		wire.Bind(new(domainRepositories.InMemoryParticipantRepository), new(*redis.RedisParticipantRepository)),
 		wire.Bind(new(domainRepositories.InMemoryResultRepository), new(*redis.RedisResultRepository)),
 		wire.Bind(new(domainRepositories.ParticipantRepository), new(*postgres.PostgresParticipantRepository)),
-		wire.Bind(new(domainRepositories.VoteRepository), new(*postgres.PostgresVoteRepository)),
+		wire.Bind(new(domainRepositories.ResultRepository), new(*postgres.PostgresResultRepository)),
 		wire.Bind(new(domainServices.CaptchaService), new(*services.CaptchaService)),
 		wire.Struct(new(Container), "*"),
 	)

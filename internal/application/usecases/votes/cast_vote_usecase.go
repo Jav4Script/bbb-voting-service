@@ -1,6 +1,7 @@
 package votes
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -18,6 +19,7 @@ type CastVoteUsecase struct {
 	VoteQueue                     string
 }
 
+// NewCastVoteUsecase creates a new instance of the CastVoteUsecase.
 func NewCastVoteUsecase(
 	inMemoryParticipantRepository repositories.InMemoryParticipantRepository,
 	inMemoryResultRepository repositories.InMemoryResultRepository,
@@ -32,9 +34,10 @@ func NewCastVoteUsecase(
 	}
 }
 
-func (uscase *CastVoteUsecase) Execute(vote entities.Vote) error {
-	// Validate participant
-	participant, err := uscase.InMemoryParticipantRepository.FindByID(vote.ParticipantID)
+// Execute performs the logic for casting a vote.
+func (usecase *CastVoteUsecase) Execute(context context.Context, vote entities.Vote) error {
+	// Validate participant by ID
+	participant, err := usecase.InMemoryParticipantRepository.FindByID(context, vote.ParticipantID)
 	if err != nil {
 		log.Printf("Error finding participant in cache: %v", err)
 		return errors.NewBusinessError("Participant not found", http.StatusNotFound)
@@ -47,14 +50,14 @@ func (uscase *CastVoteUsecase) Execute(vote entities.Vote) error {
 		return errors.NewInfrastructureError("Failed to serialize vote data")
 	}
 
-	err = uscase.MessageProducer.Publish(uscase.VoteQueue, voteData)
+	err = usecase.MessageProducer.Publish(usecase.VoteQueue, voteData)
 	if err != nil {
 		log.Printf("Error publishing vote to message queue: %v", err)
 		return errors.NewInfrastructureError("Failed to publish vote to message queue")
 	}
 
 	// Update the partial results in cache
-	err = uscase.InMemoryResultRepository.UpdatePartialResults(vote, participant)
+	err = usecase.InMemoryResultRepository.UpdatePartialResults(context, vote, participant)
 	if err != nil {
 		log.Printf("Error updating partial results: %v", err)
 		return errors.NewInfrastructureError("Failed to update partial results in cache")

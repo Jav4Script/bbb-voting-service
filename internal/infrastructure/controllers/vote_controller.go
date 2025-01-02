@@ -60,7 +60,7 @@ func (controller *VoteController) CastVote(context *gin.Context) {
 
 	vote := mappers.FromCastVoteDTO(voteDTO)
 
-	if err := controller.CastVoteUsecase.Execute(vote); err != nil {
+	if err := controller.CastVoteUsecase.Execute(context, vote); err != nil {
 		log.Printf("Error casting vote: %v", err)
 		context.Error(err)
 		return

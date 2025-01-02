@@ -1,6 +1,7 @@
 package participants
 
 import (
+	"context"
 	"log"
 
 	"bbb-voting-service/internal/domain/entities"
@@ -20,16 +21,25 @@ func NewCreateParticipantUsecase(participantRepository repositories.ParticipantR
 	}
 }
 
-func (usecase *CreateParticipantUsecase) Execute(participant entities.Participant) (entities.Participant, error) {
+func (usecase *CreateParticipantUsecase) Execute(context context.Context, participant entities.Participant) (entities.Participant, error) {
+	// Save the participant in the database
 	createdParticipant, err := usecase.ParticipantRepository.Save(participant)
 	if err != nil {
-		log.Printf("Error creating participant: %v", err)
-		return entities.Participant{}, errors.NewInfrastructureError("Failed to create participant")
+		log.Printf("Error creating participant in database: %v", err)
+		return entities.Participant{}, errors.NewInfrastructureError("Failed to create participant in database")
 	}
 
-	err = usecase.InMemoryParticipantRepository.Save(createdParticipant)
+	// Save the participant in the in-memory cache
+	err = usecase.InMemoryParticipantRepository.Save(context, createdParticipant)
 	if err != nil {
 		log.Printf("Error saving participant in memory: %v", err)
+
+		// Revert the database operation to maintain consistency
+		rollbackErr := usecase.ParticipantRepository.Delete(createdParticipant)
+		if rollbackErr != nil {
+			log.Printf("Error rolling back participant creation: %v", rollbackErr)
+		}
+
 		return entities.Participant{}, errors.NewInfrastructureError("Failed to save participant in memory")
 	}
 

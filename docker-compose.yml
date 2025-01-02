@@ -73,7 +73,7 @@ services:
 
   redis-commander:
     image: rediscommander/redis-commander:latest
-    container_name: bbb--voting-redis-commander
+    container_name: bbb-voting-redis-commander
     ports:
       - "8081:8081"
     environment:

@@ -1,32 +1,35 @@
 package jobs
 
 import (
+	"context"
 	"log"
 
 	"bbb-voting-service/internal/application/usecases/cache"
 )
 
 type SyncCacheJob struct {
-	SyncCacheUsecase             *cache.SyncResultsCacheUsecase
+	SyncResultsCacheUsecase      *cache.SyncResultsCacheUsecase
 	SyncParticipantsCacheUsecase *cache.SyncParticipantsCacheUsecase
 }
 
 func NewSyncCacheJob(syncCacheUsecase *cache.SyncResultsCacheUsecase, syncParticipantsCacheUsecase *cache.SyncParticipantsCacheUsecase) *SyncCacheJob {
 	return &SyncCacheJob{
-		SyncCacheUsecase:             syncCacheUsecase,
+		SyncResultsCacheUsecase:      syncCacheUsecase,
 		SyncParticipantsCacheUsecase: syncParticipantsCacheUsecase,
 	}
 }
 
 func (job *SyncCacheJob) Run() {
-	err := job.SyncCacheUsecase.Execute()
+	context := context.Background()
+
+	err := job.SyncResultsCacheUsecase.Execute(context)
 	if err != nil {
 		log.Printf("Error synchronizing results cache: %v", err)
 	} else {
 		log.Println("Results cache synchronized successfully")
 	}
 
-	err = job.SyncParticipantsCacheUsecase.Execute()
+	err = job.SyncParticipantsCacheUsecase.Execute(context)
 	if err != nil {
 		log.Printf("Error synchronizing participants cache: %v", err)
 	} else {
