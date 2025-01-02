@@ -71,6 +71,17 @@ services:
     command: ["redis-server", "--maxclients", "20000"]
     restart: always
 
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: bbb--voting-redis-commander
+    ports:
+      - "8081:8081"
+    environment:
+      - REDIS_HOSTS=local:bbb-voting-redis:6379
+    depends_on:
+      - redis
+    restart: always
+
   rabbitmq:
     image: rabbitmq:3-management
     container_name: bbb-voting-rabbitmq
