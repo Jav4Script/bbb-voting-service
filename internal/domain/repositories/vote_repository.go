@@ -3,13 +3,14 @@ package repositories
 import (
 	"time"
 
-	domain "bbb-voting-service/internal/domain/entities"
+	"bbb-voting-service/internal/domain/entities"
 )
 
 type VoteRepository interface {
-	Save(vote domain.Vote) error
+	Save(vote entities.Vote) error
 	CountTotalVotes() (int, error)
 	CountVotesByParticipant(participantID string) (int, error)
 	CountVotesByHour() (map[time.Time]int, error)
-	GetParticipantResults() (map[string]domain.ParticipantResult, error)
+	GetParticipantResults() (map[string]entities.ParticipantResult, error)
+	GetFinalResults() (entities.FinalResults, error)
 }

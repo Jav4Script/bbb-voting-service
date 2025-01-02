@@ -29,6 +29,9 @@ func InitCron(syncCacheJob *jobs.SyncCacheJob) *cron.Cron {
 		log.Fatalf("Failed to schedule sync job: %v", err)
 	}
 
+	// Execute the job immediately on startup
+	go syncCacheJob.Run()
+
 	c.Start()
 	return c
 }

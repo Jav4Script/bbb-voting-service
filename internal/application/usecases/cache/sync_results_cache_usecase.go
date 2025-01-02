@@ -26,7 +26,7 @@ func (usecase *SyncResultsCacheUsecase) Execute() error {
 		return err
 	}
 
-	err = usecase.InMemoryResultRepository.UpdateCacheWithFinalResults(*finalResults)
+	err = usecase.InMemoryResultRepository.UpdateCacheWithFinalResults(finalResults)
 	if err != nil {
 		log.Printf("Error updating cache with final results: %v", err)
 		return err

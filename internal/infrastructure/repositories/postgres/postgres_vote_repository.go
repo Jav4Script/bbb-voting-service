@@ -4,10 +4,9 @@ import (
 	"time"
 
 	entities "bbb-voting-service/internal/domain/entities"
-	mappers "bbb-voting-service/internal/infrastructure/mappers"
+	"bbb-voting-service/internal/infrastructure/mappers"
 	models "bbb-voting-service/internal/infrastructure/models"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -16,20 +15,12 @@ type PostgresVoteRepository struct {
 }
 
 func NewPostgresVoteRepository(database *gorm.DB) *PostgresVoteRepository {
-	return &PostgresVoteRepository{
-		DB: database,
-	}
+	return &PostgresVoteRepository{DB: database}
 }
 
 func (repository *PostgresVoteRepository) Save(vote entities.Vote) error {
 	voteModel := models.ToModelVote(vote)
-
-	err := repository.DB.Create(&voteModel).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return repository.DB.Create(&voteModel).Error
 }
 
 func (repository *PostgresVoteRepository) CountTotalVotes() (int, error) {
@@ -67,18 +58,10 @@ func (repository *PostgresVoteRepository) CountVotesByHour() (map[time.Time]int,
 }
 
 func (repository *PostgresVoteRepository) GetParticipantResults() (map[string]entities.ParticipantResult, error) {
-	var results []struct {
-		ParticipantID uuid.UUID
-		Name          string
-		Age           int
-		Gender        string
-		Votes         int
-		CreatedAt     time.Time
-		UpdatedAt     time.Time
-	}
+	var results []entities.ParticipantResult
 
 	err := repository.DB.Model(&models.VoteModel{}).
-		Select("participant_id, participants.name, participants.age, participants.gender, participants.created_at, participants.updated_at, count(*) as votes").
+		Select("participant_id as id, participants.name, participants.age, participants.gender, participants.created_at, participants.updated_at, count(*) as votes").
 		Joins("left join participants on participants.id = votes.participant_id").
 		Group("participant_id, participants.name, participants.age, participants.gender, participants.created_at, participants.updated_at").
 		Scan(&results).Error
@@ -89,8 +72,33 @@ func (repository *PostgresVoteRepository) GetParticipantResults() (map[string]en
 
 	finalResults := make(map[string]entities.ParticipantResult)
 	for _, result := range results {
-		finalResults[result.ParticipantID.String()] = mappers.ToParticipantResultFromStruct(result)
+		finalResults[result.ID] = result
 	}
 
 	return finalResults, nil
+}
+
+func (repository *PostgresVoteRepository) GetFinalResults() (entities.FinalResults, error) {
+	// Get total votes
+	totalVotes, err := repository.CountTotalVotes()
+	if err != nil {
+		return entities.FinalResults{}, err
+	}
+
+	// Get votes by participant
+	participantResults, err := repository.GetParticipantResults()
+	if err != nil {
+		return entities.FinalResults{}, err
+	}
+
+	// Get votes by hour
+	votesByHour, err := repository.CountVotesByHour()
+	if err != nil {
+		return entities.FinalResults{}, err
+	}
+
+	// Aggregate results using the mapper
+	finalResultsEntity := mappers.ToFinalResults(participantResults, totalVotes, votesByHour)
+
+	return finalResultsEntity, nil
 }
