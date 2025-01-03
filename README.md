@@ -354,7 +354,7 @@ Os testes de carga foram realizados com sucesso, e o sistema BBB Voting System d
 <img src="docs/assets/load-test-results.png" alt="Load Test Results" />
 
 #### All Endpoints
-<img src="docs/assets/load-test-results.png" alt="Load Test Results" />
+<img src="docs/assets/load-test-all.png" alt="Load Test Results" />
 
 <div align="right"><a style="font-weight: 500;" href="#top">Back to Top</a></div>
 
