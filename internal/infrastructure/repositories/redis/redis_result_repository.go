@@ -3,135 +3,113 @@ package redis
 import (
 	"context"
 	"log"
+	"strconv"
+
+	"bbb-voting-service/internal/domain/entities"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/vmihailenco/msgpack/v5"
-
-	"bbb-voting-service/internal/domain"
-	"bbb-voting-service/internal/domain/entities"
-	"bbb-voting-service/internal/domain/errors"
-	"bbb-voting-service/internal/infrastructure/mappers"
 )
 
 type RedisResultRepository struct {
 	Client *redis.Client
 }
 
-// NewRedisResultRepository creates a new instance of RedisResultRepository.
 func NewRedisResultRepository(client *redis.Client) *RedisResultRepository {
 	return &RedisResultRepository{Client: client}
 }
 
-// GetPartialResults retrieves the partial voting results including participant details.
-func (repository *RedisResultRepository) GetPartialResults(ctx context.Context) ([]entities.PartialResult, error) {
-	// Fetch all vote counts from Redis hash
-	partialResultsMap, err := repository.Client.HGetAll(ctx, domain.PartialResultsKey).Result()
+// GetPartialResults retrieves a list of PartialResult, including participant details and votes.
+func (redisResultRepository *RedisResultRepository) GetPartialResults(context context.Context) ([]entities.PartialResult, error) {
+	// Fetch all vote counts from Redis
+	partialResultsMap, err := redisResultRepository.Client.HGetAll(context, "partial_results").Result()
 	if err != nil {
 		log.Printf("Error fetching partial results: %v", err)
-		return nil, errors.NewInfrastructureError("Error fetching partial results from Redis")
+		return nil, err
 	}
 
-	// Prepare to collect partial results
-	var partialResults []entities.PartialResult
-
-	// Process each vote and fetch corresponding participant details
+	// Prepare the result list
+	partialResults := make([]entities.PartialResult, 0, len(partialResultsMap))
 	for id, votesStr := range partialResultsMap {
-		participant, err := repository.getParticipant(ctx, "participant:"+id)
+		// Retrieve participant details
+		participantData, err := redisResultRepository.Client.HGet(context, "participants", id).Result()
+		if err == redis.Nil {
+			log.Printf("Participant with ID %s not found", id)
+			continue
+		}
 		if err != nil {
-			log.Printf("Error fetching participant details for ID %s: %v", id, err)
-			continue // Skip participants with errors
+			log.Printf("Error fetching participant %s: %v", id, err)
+			continue
 		}
 
-		// Map participant details into a partial result object
-		partialResult := mappers.ToPartialResultFromParticipant(id, participant, votesStr)
-		partialResults = append(partialResults, partialResult)
+		// Deserialize participant data
+		var participant entities.Participant
+		if err := msgpack.Unmarshal([]byte(participantData), &participant); err != nil {
+			log.Printf("Error unmarshalling participant %s: %v", id, err)
+			continue
+		}
+
+		// Parse votes and create PartialResult
+		votes, _ := strconv.Atoi(votesStr)
+		partialResults = append(partialResults, entities.PartialResult{
+			ID:     participant.ID,
+			Name:   participant.Name,
+			Age:    participant.Age,
+			Gender: participant.Gender,
+			Votes:  votes,
+		})
 	}
 
 	return partialResults, nil
 }
 
-// getParticipant retrieves participant details from Redis.
-func (repository *RedisResultRepository) getParticipant(ctx context.Context, key string) (entities.Participant, error) {
-	var participant entities.Participant
+// UpdatePartialResults increments the vote count and updates participant details.
+func (redisResultRepository *RedisResultRepository) UpdatePartialResults(context context.Context, vote entities.Vote, participant entities.Participant) error {
+	pipe := redisResultRepository.Client.TxPipeline()
 
-	// Fetch participant data from Redis
-	data, err := repository.Client.Get(ctx, key).Result()
-	if err == redis.Nil {
-		return participant, errors.NewInfrastructureError("Participant not found")
-	} else if err != nil {
-		log.Printf("Error fetching participant with key %s: %v", key, err)
-		return participant, errors.NewInfrastructureError("Error fetching participant from Redis")
-	}
+	// Increment votes
+	pipe.HIncrBy(context, "partial_results", vote.ParticipantID, 1)
 
-	// Deserialize the participant data
-	if err := msgpack.Unmarshal([]byte(data), &participant); err != nil {
-		log.Printf("Error unmarshalling participant data for key %s: %v", key, err)
-		return participant, errors.NewInfrastructureError("Error unmarshalling participant data")
-	}
-
-	return participant, nil
-}
-
-// UpdatePartialResults increments the vote count for a participant and stores their details.
-func (repository *RedisResultRepository) UpdatePartialResults(ctx context.Context, vote entities.Vote, participant entities.Participant) error {
-	pipe := repository.Client.TxPipeline()
-
-	// Check if the vote has already been processed
-	existsCmd := pipe.SIsMember(ctx, domain.VoteSetKey, vote.ID)
-
-	// Increment the vote count for the participant
-	pipe.HIncrBy(ctx, domain.PartialResultsKey, vote.ParticipantID, 1)
-
-	// Serialize and store participant details
-	participantKey := "participant:" + vote.ParticipantID
+	// Serialize participant and store in Redis
 	participantData, err := msgpack.Marshal(participant)
 	if err != nil {
-		log.Printf("Error serializing participant data: %v", err)
-		return errors.NewInfrastructureError("Error serializing participant data")
+		log.Printf("Error serializing participant %s: %v", participant.ID, err)
+		return err
 	}
-	pipe.Set(ctx, participantKey, participantData, 0)
+	pipe.HSet(context, "participants", participant.ID, participantData)
 
-	// Add the vote to the set of processed votes
-	pipe.SAdd(ctx, domain.VoteSetKey, vote.ID)
-
-	// Execute the pipeline
-	if _, err := pipe.Exec(ctx); err != nil {
-		log.Printf("Error updating partial results in Redis: %v", err)
-		return errors.NewInfrastructureError("Error updating partial results in Redis")
-	}
-
-	// Verify if the vote was already processed
-	if exists, _ := existsCmd.Result(); exists {
-		return errors.NewBusinessError("Vote already exists", 409)
+	// Execute transaction
+	_, err = pipe.Exec(context)
+	if err != nil {
+		log.Printf("Error updating partial results: %v", err)
+		return err
 	}
 
 	return nil
 }
 
-// UpdateCacheWithFinalResults updates Redis with final voting results.
-func (repository *RedisResultRepository) UpdateCacheWithFinalResults(ctx context.Context, finalResults entities.FinalResults) error {
-	pipe := repository.Client.TxPipeline()
+func (redisResultRepository *RedisResultRepository) UpdateCacheWithFinalResults(ctx context.Context, finalResults entities.FinalResults) error {
+	pipe := redisResultRepository.Client.TxPipeline()
 
-	// Process and store each participant's final result
 	for _, result := range finalResults.ParticipantResults {
-		participantKey, participantData, resultID, resultVotes := mappers.ToRedisData(result)
+		participantKey := "participant:" + result.ID
 
-		// Serialize participant details
-		data, err := msgpack.Marshal(participantData)
+		// Serializar os dados do participante final
+		participantData, err := msgpack.Marshal(result)
 		if err != nil {
-			log.Printf("Error serializing participant data: %v", err)
-			return errors.NewInfrastructureError("Error serializing participant data")
+			log.Printf("Error serializing participant %s: %v", result.ID, err)
+			return err
 		}
 
-		// Store participant details and vote counts in Redis
-		pipe.Set(ctx, participantKey, data, 0)
-		pipe.HSet(ctx, domain.PartialResultsKey, resultID, resultVotes)
+		// Atualizar os resultados no Redis
+		pipe.Set(ctx, participantKey, participantData, 0)
+		pipe.HSet(ctx, "final_results", result.ID, result.Votes)
 	}
 
-	// Execute the pipeline
-	if _, err := pipe.Exec(ctx); err != nil {
-		log.Printf("Error updating final results in Redis: %v", err)
-		return errors.NewInfrastructureError("Error updating final results in Redis")
+	_, err := pipe.Exec(ctx)
+	if err != nil {
+		log.Printf("Error updating final results cache: %v", err)
+		return err
 	}
 
 	return nil

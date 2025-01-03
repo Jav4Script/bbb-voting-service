@@ -5,7 +5,6 @@ import (
 	"log"
 
 	"bbb-voting-service/internal/domain/entities"
-	"bbb-voting-service/internal/domain/errors"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/vmihailenco/msgpack/v5"
@@ -20,40 +19,57 @@ func NewRedisParticipantRepository(client *redis.Client) *RedisParticipantReposi
 }
 
 // Save stores or updates a participant in Redis.
-func (repository *RedisParticipantRepository) Save(context context.Context, participant entities.Participant) error {
-	// Serialize the participant using msgpack
+func (redisParticipantRepository *RedisParticipantRepository) Save(context context.Context, participant entities.Participant) error {
 	participantData, err := msgpack.Marshal(participant)
 	if err != nil {
-		log.Printf("Error marshaling participant %s: %v", participant.ID, err)
-		return errors.NewInfrastructureError("Failed to marshal participant data")
+		log.Printf("Error serializing participant %s: %v", participant.ID, err)
+		return err
 	}
 
-	// Save the serialized data into the Redis hash
-	err = repository.Client.HSet(context, "participants", participant.ID, participantData).Err()
+	err = redisParticipantRepository.Client.HSet(context, "participants", participant.ID, participantData).Err()
 	if err != nil {
-		log.Printf("Error saving participant %s to Redis: %v", participant.ID, err)
-		return errors.NewInfrastructureError("Failed to save participant to Redis")
+		log.Printf("Error saving participant %s: %v", participant.ID, err)
+		return err
 	}
 
 	return nil
 }
 
-// FindAll retrieves all participants from Redis.
-func (repository *RedisParticipantRepository) FindAll(context context.Context) ([]entities.Participant, error) {
-	// Get all participants from the Redis hash
-	participantsData, err := repository.Client.HGetAll(context, "participants").Result()
+// FindByID retrieves a participant by ID from Redis.
+func (redisParticipantRepository *RedisParticipantRepository) FindByID(context context.Context, id string) (entities.Participant, error) {
+	data, err := redisParticipantRepository.Client.HGet(context, "participants", id).Result()
+	if err == redis.Nil {
+		log.Printf("Participant with ID %s not found", id)
+		return entities.Participant{}, nil
+	}
 	if err != nil {
-		log.Printf("Error retrieving all participants from Redis: %v", err)
-		return nil, errors.NewInfrastructureError("Failed to retrieve participants from Redis")
+		log.Printf("Error fetching participant %s: %v", id, err)
+		return entities.Participant{}, err
 	}
 
-	var participants []entities.Participant
-	for _, data := range participantsData {
+	var participant entities.Participant
+	if err := msgpack.Unmarshal([]byte(data), &participant); err != nil {
+		log.Printf("Error unmarshalling participant %s: %v", id, err)
+		return entities.Participant{}, err
+	}
+
+	return participant, nil
+}
+
+// FindAll retrieves all participants from Redis.
+func (redisParticipantRepository *RedisParticipantRepository) FindAll(context context.Context) ([]entities.Participant, error) {
+	participantsData, err := redisParticipantRepository.Client.HGetAll(context, "participants").Result()
+	if err != nil {
+		log.Printf("Error fetching participants: %v", err)
+		return nil, err
+	}
+
+	participants := make([]entities.Participant, 0, len(participantsData))
+	for id, data := range participantsData {
 		var participant entities.Participant
-		err := msgpack.Unmarshal([]byte(data), &participant)
-		if err != nil {
-			log.Printf("Error deserializing participant data: %v", err)
-			continue // Skip invalid entries
+		if err := msgpack.Unmarshal([]byte(data), &participant); err != nil {
+			log.Printf("Error unmarshalling participant %s: %v", id, err)
+			continue
 		}
 		participants = append(participants, participant)
 	}
@@ -61,36 +77,12 @@ func (repository *RedisParticipantRepository) FindAll(context context.Context) (
 	return participants, nil
 }
 
-// FindByID retrieves a participant by ID from Redis.
-func (repository *RedisParticipantRepository) FindByID(context context.Context, id string) (entities.Participant, error) {
-	// Fetch the participant data from Redis
-	data, err := repository.Client.HGet(context, "participants", id).Result()
-	if err == redis.Nil {
-		return entities.Participant{}, errors.NewNotFoundError("Participant not found")
-	}
-	if err != nil {
-		log.Printf("Error retrieving participant %s from Redis: %v", id, err)
-		return entities.Participant{}, errors.NewInfrastructureError("Failed to retrieve participant")
-	}
-
-	// Deserialize the participant data
-	var participant entities.Participant
-	err = msgpack.Unmarshal([]byte(data), &participant)
-	if err != nil {
-		log.Printf("Error deserializing participant %s data: %v", id, err)
-		return entities.Participant{}, errors.NewInfrastructureError("Failed to deserialize participant data")
-	}
-
-	return participant, nil
-}
-
 // Delete removes a participant by ID from Redis.
-func (repository *RedisParticipantRepository) Delete(context context.Context, id string) error {
-	// Remove the participant from the Redis hash
-	err := repository.Client.HDel(context, "participants", id).Err()
+func (redisParticipantRepository *RedisParticipantRepository) Delete(context context.Context, id string) error {
+	err := redisParticipantRepository.Client.HDel(context, "participants", id).Err()
 	if err != nil {
-		log.Printf("Error deleting participant %s from Redis: %v", id, err)
-		return errors.NewInfrastructureError("Failed to delete participant from Redis")
+		log.Printf("Error deleting participant %s: %v", id, err)
+		return err
 	}
 
 	return nil
