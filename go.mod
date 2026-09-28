@@ -1,10 +1,10 @@
 module bbb-voting-service
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/dchest/captcha v1.1.0
-	github.com/gin-contrib/cors v1.7.8
+	github.com/gin-contrib/cors v1.7.9
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/wire v0.7.0
@@ -16,7 +16,7 @@ require (
 	github.com/swaggo/gin-swagger v1.6.1
 	github.com/swaggo/swag v1.16.6
 	github.com/vmihailenco/msgpack/v5 v5.4.1
-	gorm.io/driver/postgres v1.6.2
+	gorm.io/driver/postgres v1.6.3
 	gorm.io/gorm v1.31.2
 )
 
@@ -66,7 +66,7 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/arch v0.29.0 // indirect
-	golang.org/x/crypto v0.55.0 // indirect
+	golang.org/x/crypto v0.56.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
