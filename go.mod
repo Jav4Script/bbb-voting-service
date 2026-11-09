@@ -1,10 +1,10 @@
 module bbb-voting-service
 
-go 1.26.0
+go 1.26.10
 
 require (
 	github.com/dchest/captcha v1.1.0
-	github.com/gin-contrib/cors v1.7.9
+	github.com/gin-contrib/cors v1.7.10
 	github.com/gin-gonic/gin v1.12.0
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/google/wire v0.7.0
@@ -26,7 +26,7 @@ require (
 	github.com/quic-go/qpack v0.6.0 // indirect
 	github.com/quic-go/quic-go v0.60.0 // indirect
 	go.mongodb.org/mongo-driver/v2 v2.8.0 // indirect
-	golang.org/x/mod v0.38.0 // indirect
+	golang.org/x/mod v0.41.0 // indirect
 )
 
 require (
@@ -66,12 +66,12 @@ require (
 	github.com/ugorji/go/codec v1.3.1 // indirect
 	github.com/vmihailenco/tagparser/v2 v2.0.0 // indirect
 	golang.org/x/arch v0.29.0 // indirect
-	golang.org/x/crypto v0.56.0 // indirect
-	golang.org/x/net v0.57.0 // indirect
-	golang.org/x/sync v0.22.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.41.0 // indirect
-	golang.org/x/tools v0.48.0 // indirect
+	golang.org/x/crypto v0.57.0 // indirect
+	golang.org/x/net v0.60.0 // indirect
+	golang.org/x/sync v0.23.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
+	golang.org/x/text v0.42.0 // indirect
+	golang.org/x/tools v0.49.0 // indirect
 	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
